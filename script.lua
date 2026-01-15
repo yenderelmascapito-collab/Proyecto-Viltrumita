@@ -1,7 +1,6 @@
 --// CONFIGURACIÓN BASE
 local highlightColor = Color3.fromRGB(100, 0, 244)
-local headSize = 25
-local hitboxTransparency = 1
+local headSize = 25 -- tamaño predeterminado cambiado a 25
 
 --// SERVICIOS
 local Players = game:GetService("Players")
@@ -12,7 +11,6 @@ local TeleportService = game:GetService("TeleportService")
 --// VARIABLES
 local highlightEnabled = true
 local hitboxEnabled = true
-local showHitbox = false
 
 -- guardamos tamaños originales para poder restaurarlos
 local originalRootSizes = {}
@@ -32,6 +30,7 @@ local function restoreOriginalRootSize(character)
 	if not character then return end
 	local root = character:FindFirstChild("HumanoidRootPart")
 	if root and originalRootSizes[character] then
+		-- intentar restaurar (puede no replicarse al servidor, pero al menos para tu cliente)
 		pcall(function()
 			root.Size = originalRootSizes[character]
 			root.Transparency = 0
@@ -45,10 +44,11 @@ local function applyHitbox(character)
 	if not character then return end
 	local root = character:FindFirstChild("HumanoidRootPart") or character:FindFirstChildWhichIsA("BasePart")
 	if root then
+		-- Guardar tamaño original la primera vez
 		saveOriginalRootSize(character)
 		pcall(function()
 			root.Size = Vector3.new(headSize, headSize, headSize)
-			root.Transparency = showHitbox and hitboxTransparency or 1
+			root.Transparency = 1
 			root.CanCollide = false
 		end)
 	end
@@ -65,12 +65,14 @@ end
 local function applyHighlightAndHitbox(character)
 	if not character then return end
 
+	-- HITBOX
 	if hitboxEnabled then
 		applyHitbox(character)
 	else
 		removeHitbox(character)
 	end
 
+	-- HIGHLIGHT
 	local existing = character:FindFirstChild("CustomHighlight")
 	if highlightEnabled then
 		if not existing then
@@ -82,6 +84,7 @@ local function applyHighlightAndHitbox(character)
 			highlight.Adornee = character
 			highlight.Parent = character
 		else
+			-- actualizar color si ya existe
 			pcall(function()
 				existing.OutlineColor = highlightColor
 				existing.OutlineTransparency = 0
@@ -109,10 +112,13 @@ local function onPlayerAdded(player)
 	if player == LocalPlayer then return end
 
 	player.CharacterAdded:Connect(function(char)
+		-- cuando reaparezca, aplicar según estado actual
+		-- esperar a HumanoidRootPart en caso de que aún no exista
 		char:WaitForChild("HumanoidRootPart", 5)
 		applyHighlightAndHitbox(char)
 	end)
 
+	-- si ya tiene personaje al unirse
 	if player.Character then
 		applyHighlightAndHitbox(player.Character)
 	end
@@ -123,6 +129,7 @@ for _, p in ipairs(Players:GetPlayers()) do
 end
 Players.PlayerAdded:Connect(onPlayerAdded)
 
+-- cuando un jugador se va, intentar restaurar tamaño original por si lo modificamos
 Players.PlayerRemoving:Connect(function(player)
 	if player and player.Character then
 		restoreOriginalRootSize(player.Character)
@@ -172,25 +179,14 @@ local HitboxToggle = MainTab:CreateToggle({
 			for _, p in ipairs(Players:GetPlayers()) do
 				if p.Character then restoreOriginalRootSize(p.Character) end
 			end
-		else
-			applyToAllPlayers()
 		end
-	end,
-})
-
-local ShowHitboxToggle = MainTab:CreateToggle({
-	Name = "Mostrar Hitbox",
-	CurrentValue = showHitbox,
-	Flag = "ShowHitbox",
-	Callback = function(Value)
-		showHitbox = Value
 		applyToAllPlayers()
 	end,
 })
 
 VisualsTab:CreateSection("Highlight")
 
-local ColorPicker = VisualsTab:CreateColorPicker({
+local HighlightColorPicker = VisualsTab:CreateColorPicker({
 	Name = "Highlight Color",
 	Color = highlightColor,
 	Flag = "HighlightColor",
@@ -222,28 +218,6 @@ local SizeSlider = VisualsTab:CreateSlider({
 			for _, p in ipairs(Players:GetPlayers()) do
 				if p ~= LocalPlayer and p.Character then
 					applyHitbox(p.Character)
-				end
-			end
-		end
-	end,
-})
-
-local TransparencySlider = VisualsTab:CreateSlider({
-	Name = "Hitbox Transparency",
-	Range = {0, 1},
-	Increment = 0.05,
-	Suffix = "",
-	CurrentValue = hitboxTransparency,
-	Flag = "HitboxTransparency",
-	Callback = function(Value)
-		hitboxTransparency = math.clamp(Value, 0, 1)
-		if hitboxEnabled and showHitbox then
-			for _, p in ipairs(Players:GetPlayers()) do
-				if p ~= LocalPlayer and p.Character then
-					local root = p.Character:FindFirstChild("HumanoidRootPart")
-					if root then
-						pcall(function() root.Transparency = hitboxTransparency end)
-					end
 				end
 			end
 		end
