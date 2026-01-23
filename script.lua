@@ -35,10 +35,42 @@ local hitboxSize = 25
 local antiStunEnabled = false
 local antiRagdollEnabled = false
 local antiHitEnabled = false
-local antiKnockbackEnabled = false
+
+local originalWalkSpeed = 16
+local originalJumpPower = 50
+local originalAutoRotate = true
 
 local autoBlockEnabled = false
 local blockActive = false
+
+local function setupHumanoid(hum)
+	if not hum then return end
+	
+	hum.StateChanged:Connect(function(oldState, newState)
+		if antiStunEnabled and newState == Enum.HumanoidStateType.PlatformStanding then
+			hum.WalkSpeed = originalWalkSpeed
+			hum.JumpPower = originalJumpPower
+			hum.AutoRotate = originalAutoRotate
+			hum:ChangeState(Enum.HumanoidStateType.GettingUp)
+		elseif antiRagdollEnabled and (newState == Enum.HumanoidStateType.Ragdoll or newState == Enum.HumanoidStateType.FallingDown) then
+			hum:ChangeState(Enum.HumanoidStateType.GettingUp)
+		end
+	end)
+end
+
+LocalPlayer.CharacterAdded:Connect(function(char)
+	local hum = char:WaitForChild("Humanoid", 5)
+	if hum then
+		setupHumanoid(hum)
+	end
+end)
+
+if LocalPlayer.Character then
+	local hum = LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
+	if hum then
+		setupHumanoid(hum)
+	end
+end
 
 local function getRoot(char)
 	return char and char:FindFirstChild("HumanoidRootPart")
@@ -341,7 +373,17 @@ Movement:CreateDropdown({
 Defense:CreateToggle({
 	Name="Anti Stun",
 	CurrentValue=false,
-	Callback=function(v) antiStunEnabled=v end
+	Callback=function(v) 
+		antiStunEnabled = v
+		if v then
+			local hum = LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
+			if hum then
+				originalWalkSpeed = hum.WalkSpeed
+				originalJumpPower = hum.JumpPower
+				originalAutoRotate = hum.AutoRotate
+			end
+		end
+	end
 })
 
 Defense:CreateToggle({
@@ -354,12 +396,6 @@ Defense:CreateToggle({
 	Name="Anti Hit",
 	CurrentValue=false,
 	Callback=function(v) antiHitEnabled=v end
-})
-
-Defense:CreateToggle({
-	Name="Anti Knockback",
-	CurrentValue=false,
-	Callback=function(v) antiKnockbackEnabled=v end
 })
 
 Defense:CreateToggle({
@@ -397,7 +433,6 @@ Explicacion:CreateLabel("🛡️ DEFENSE TAB:")
 Explicacion:CreateLabel("• Anti Stun: Evita ser aturdido")
 Explicacion:CreateLabel("• Anti Ragdoll: Evita caer/ragdoll")
 Explicacion:CreateLabel("• Anti Hit: Evita ser golpeado")
-Explicacion:CreateLabel("• Anti Knockback: Reduce el empuje recibido")
 Explicacion:CreateLabel("• Auto Block (F): Mantiene bloqueado con F automáticamente")
 Explicacion:CreateLabel("")
 Explicacion:CreateLabel("⚠️ TECLAS PRINCIPALES:")
@@ -412,36 +447,11 @@ Rayfield:LoadConfiguration()
 RunService.Stepped:Connect(function()
 	local char = LocalPlayer.Character
 	if not char then return end
-	local hum = char:FindFirstChildOfClass("Humanoid")
-	if not hum then return end
-
-	if antiStunEnabled then
-		hum.PlatformStand = false
-	end
-	
-	if antiRagdollEnabled then
-		hum:SetStateEnabled(Enum.HumanoidStateType.Ragdoll,false)
-		hum:SetStateEnabled(Enum.HumanoidStateType.FallingDown,false)
-	end
-end)
-
-RunService.Stepped:Connect(function()
-	local char = LocalPlayer.Character
-	if not char then return end
 	local root = char:FindFirstChild("HumanoidRootPart")
 	if not root then return end
 
 	if antiHitEnabled then
 		root.AssemblyAngularVelocity = Vector3.zero
-	end
-
-	if antiKnockbackEnabled then
-		local vel = root.AssemblyLinearVelocity
-		root.AssemblyLinearVelocity = Vector3.new(
-			vel.X * 0.25,
-			vel.Y,
-			vel.Z * 0.25
-		)
 	end
 end)
 
