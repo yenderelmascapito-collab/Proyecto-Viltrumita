@@ -99,7 +99,6 @@ local function applyHighlight(char, color)
 end
 
 local function applyESP(char, player)
-	-- ESP Name
 	if espNameEnabled then
 		local nameGui = char:FindFirstChild("ESPName")
 		if not nameGui then
@@ -125,7 +124,6 @@ local function applyESP(char, player)
 		if nameGui then nameGui:Destroy() end
 	end
 
-	-- ESP Box (simple implementation with parts)
 	if espBoxEnabled then
 		local box = char:FindFirstChild("ESPBox")
 		if not box then
@@ -140,7 +138,7 @@ local function applyESP(char, player)
 		end
 		local root = char:FindFirstChild("HumanoidRootPart")
 		if root then
-			box.Size = Vector3.new(4, 6, 2)  -- Adjust size based on character
+			box.Size = Vector3.new(4, 6, 2)
 			box.CFrame = root.CFrame
 		end
 	else
@@ -148,7 +146,6 @@ local function applyESP(char, player)
 		if box then box:Destroy() end
 	end
 
-	-- ESP Bones
 	if espBonesEnabled then
 		local bonesFolder = char:FindFirstChild("ESPBones")
 		if not bonesFolder then
@@ -156,7 +153,6 @@ local function applyESP(char, player)
 			bonesFolder.Name = "ESPBones"
 			bonesFolder.Parent = char
 
-			-- Define bone connections
 			local connections = {
 				{"Head", "HumanoidRootPart"},
 				{"HumanoidRootPart", "Left Arm"},
@@ -204,8 +200,8 @@ local function showSelectedText(char)
 	if not head then return end
 
 	local bb = Instance.new("BillboardGui")
-	bb.Size = UDim2.new(0,120,0,25)
-	bb.StudsOffset = Vector3.new(0,2.5,0)
+	bb.Size = UDim2.new(0,80,0,18)
+	bb.StudsOffset = Vector3.new(0,2.2,0)
 	bb.AlwaysOnTop = true
 	bb.Parent = head
 
@@ -245,12 +241,15 @@ local function applyEffects()
 
 	for _, p in ipairs(Players:GetPlayers()) do
 		if p ~= LocalPlayer and p.Character then
-			if hitboxEnabled then applyHitbox(p.Character) end
 			local color = highlightColor
 			if selectedPlayer == p then color = autoHighlightColor end
 			applyHighlight(p.Character, color)
 			applyESP(p.Character, p)
 		end
+	end
+
+	if hitboxEnabled and selectedPlayer and selectedPlayer.Character then
+		applyHitbox(selectedPlayer.Character)
 	end
 
 	if selectedPlayer and selectedPlayer.Character then
@@ -439,7 +438,6 @@ RunService.RenderStepped:Connect(function()
 		for _, p in ipairs(Players:GetPlayers()) do
 			if p ~= LocalPlayer and p.Character then
 				local char = p.Character
-				-- Update ESP Box position
 				if espBoxEnabled then
 					local box = char:FindFirstChild("ESPBox")
 					if box then
@@ -447,7 +445,6 @@ RunService.RenderStepped:Connect(function()
 						if root then box.CFrame = root.CFrame end
 					end
 				end
-				-- ESP Bones and Name are static, but can add updates if needed
 			end
 		end
 	end
