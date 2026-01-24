@@ -25,12 +25,157 @@ local espBonesEnabled = false
 local espNameEnabled = false
 
 local bunnyEnabled = false
+local bunnyLegitEnabled = false
+local emoteJumpEnabled = false
 local SIDE_POWER = 140
 local JUMP_POWER = 90
 local COOLDOWN = 0.16
 local FREEZE_TIME = 0.15
 local holdingSpace = false
 local canJump = true
+local soundEnabled = true
+local toggleSound = Instance.new("Sound")
+toggleSound.SoundId = "rbxassetid://12221967"
+toggleSound.Parent = workspace
+
+local hideMenuSound = Instance.new("Sound")
+hideMenuSound.SoundId = "rbxassetid://12221944"
+hideMenuSound.Parent = workspace
+
+local function playSound()
+	if soundEnabled then
+		toggleSound:Stop()
+		toggleSound:Play()
+		print("Sonido de toggle reproducido") -- Debug
+	else
+		print("Sonidos deshabilitados") -- Debug
+	end
+end
+
+local musicEnabled = false
+local currentMusic = nil
+local backgroundMusic = Instance.new("Sound")
+backgroundMusic.Parent = workspace
+backgroundMusic.Looped = true
+backgroundMusic.Volume = 0.5
+
+local musicIDs = {
+	["Sleeping City"] = "73811397460869",
+	["Voce na Mira"] = "120579175218769",
+	["Gozalo"] = "126101841412059",
+	["HYPNOSAES RENICHT ESPECTRAL"] = "119202700760169",
+	["Nuts Lil Peep"] = "98839453510161",
+	["Mimosa 2000"] = "137329447492960",
+	["Conosco Tu Debilidad"] = "93204353670810",
+	["Todos Los Caminos Llevan a Roma"] = "103637998030679"
+}
+
+local function playSelectedMusic()
+	if currentMusic and musicIDs[currentMusic] then
+		backgroundMusic:Stop()
+		backgroundMusic.SoundId = "rbxassetid://" .. musicIDs[currentMusic]
+		backgroundMusic:Play()
+		musicEnabled = true
+	end
+end
+
+local function stopMusic()
+	backgroundMusic:Stop()
+	musicEnabled = false
+	currentMusic = nil
+end
+
+local function detectGameSide()
+	local char = LocalPlayer.Character
+	if not char then return "No character" end
+	local hum = char:FindFirstChildOfClass("Humanoid")
+	local root = char:FindFirstChild("HumanoidRootPart")
+	if not hum or not root then return "No humanoid/root" end
+
+	local results = {}
+	local originalWS = hum.WalkSpeed
+	local originalJP = hum.JumpPower
+	local originalSize = root.Size
+	local originalCF = root.CFrame
+
+	-- Prueba 1: WalkSpeed
+	hum.WalkSpeed = 50
+	task.wait(0.05)
+	results.walkSpeed = (hum.WalkSpeed == 50)
+	hum.WalkSpeed = originalWS
+
+	-- Prueba 2: JumpPower
+	hum.JumpPower = 100
+	task.wait(0.05)
+	results.jumpPower = (hum.JumpPower == 100)
+	hum.JumpPower = originalJP
+
+	-- Prueba 3: Root Size
+	root.Size = Vector3.new(5,5,5)
+	task.wait(0.05)
+	results.rootSize = (root.Size == Vector3.new(5,5,5))
+	root.Size = originalSize
+
+	-- Prueba 4: AssemblyLinearVelocity
+	local originalVel = root.AssemblyLinearVelocity
+	root.AssemblyLinearVelocity = Vector3.new(10,0,10)
+	task.wait(0.05)
+	results.assemblyVel = (root.AssemblyLinearVelocity == Vector3.new(10,0,10))
+	root.AssemblyLinearVelocity = originalVel
+
+	-- Prueba 5: HumanoidState
+	local originalState = hum:GetState()
+	hum:ChangeState(Enum.HumanoidStateType.Physics)
+	task.wait(0.05)
+	results.humanoidState = (hum:GetState() == Enum.HumanoidStateType.Physics)
+	hum:ChangeState(originalState)
+
+	-- Prueba 6: CFrame pequeño
+	local newCF = originalCF * CFrame.new(0.1, 0, 0)
+	root.CFrame = newCF
+	task.wait(0.05)
+	results.cframeSmall = (root.CFrame.Position == newCF.Position)
+	root.CFrame = originalCF
+
+	-- Prueba 7: Snapback detection (cambio grande y ver si corrige)
+	local snapCF = originalCF * CFrame.new(5, 0, 0)
+	root.CFrame = snapCF
+	task.wait(0.1)
+	results.snapback = (root.CFrame.Position ~= snapCF.Position) -- Si cambió, hay snapback
+	root.CFrame = originalCF
+
+	-- Calcular resultado final
+	local passedCount = 0
+	for _, passed in pairs(results) do
+		if passed then passedCount = passedCount + 1 end
+	end
+
+	local totalTests = 7
+	local result
+	if passedCount == totalTests then
+		result = "Client-Side"
+	elseif passedCount >= totalTests / 2 then
+		result = "Server-Side Parcial"
+	elseif passedCount == 0 then
+		result = "Server-Side Estricto"
+	else
+		result = "Mixto / Mal Protegido"
+	end
+
+	-- Reporte detallado
+	print("=== REPORTE DETECTOR SERVER-SIDE ===")
+	print("WalkSpeed mantenido:", results.walkSpeed)
+	print("JumpPower mantenido:", results.jumpPower)
+	print("Root Size mantenido:", results.rootSize)
+	print("AssemblyLinearVelocity mantenido:", results.assemblyVel)
+	print("HumanoidState mantenido:", results.humanoidState)
+	print("CFrame pequeño mantenido:", results.cframeSmall)
+	print("Snapback detectado:", results.snapback)
+	print("Resultado Final:", result)
+	print("=====================================")
+
+	return result
+end
 
 local hitboxSize = 25
 
@@ -303,7 +448,7 @@ local function freezeAnimations(humanoid, duration)
 end
 
 RunService.RenderStepped:Connect(function()
-	if not bunnyEnabled or not holdingSpace or not canJump then return end
+	if (not bunnyEnabled and not bunnyLegitEnabled and not emoteJumpEnabled) or not holdingSpace or not canJump then return end
 
 	local char = LocalPlayer.Character
 	if not char then return end
@@ -321,17 +466,31 @@ RunService.RenderStepped:Connect(function()
 	moveDir = moveDir.Unit
 	canJump = false
 
-	freezeAnimations(humanoid, FREEZE_TIME)
-	humanoid:SetStateEnabled(Enum.HumanoidStateType.Jumping, false)
-	humanoid:ChangeState(Enum.HumanoidStateType.Physics)
+	if bunnyLegitEnabled and math.random() < 0.3 then
+		task.delay(COOLDOWN, function()
+			canJump = true
+		end)
+		return
+	end
 
-	root.AssemblyLinearVelocity =
-		(moveDir * SIDE_POWER) + Vector3.new(0, JUMP_POWER, 0)
+	if not emoteJumpEnabled then
+		freezeAnimations(humanoid, FREEZE_TIME)
+		humanoid:SetStateEnabled(Enum.HumanoidStateType.Jumping, false)
+		humanoid:ChangeState(Enum.HumanoidStateType.Physics)
+	end
 
-	task.delay(FREEZE_TIME, function()
-		humanoid:SetStateEnabled(Enum.HumanoidStateType.Jumping, true)
-		humanoid:ChangeState(Enum.HumanoidStateType.Running)
-	end)
+	if emoteJumpEnabled then
+		root.AssemblyLinearVelocity = Vector3.new(0, JUMP_POWER, 0)
+	else
+		root.AssemblyLinearVelocity = (moveDir * SIDE_POWER) + Vector3.new(0, JUMP_POWER, 0)
+	end
+
+	if not emoteJumpEnabled then
+		task.delay(FREEZE_TIME, function()
+			humanoid:SetStateEnabled(Enum.HumanoidStateType.Jumping, true)
+			humanoid:ChangeState(Enum.HumanoidStateType.Running)
+		end)
+	end
 
 	task.delay(COOLDOWN, function()
 		canJump = true
@@ -347,10 +506,11 @@ local Window = Rayfield:CreateWindow({
 local Main = Window:CreateTab("Main", 4483362458)
 local ESP = Window:CreateTab("ESP/Aiming", 4483362458)
 local Movement = Window:CreateTab("Movement", 4483362458)
+local Music = Window:CreateTab("Music", 4483362458)
 local Explicacion = Window:CreateTab("Explicacion", 4483362458)
 local Settings = Window:CreateTab("Settings", 4483362458)
 
-Main:CreateToggle({Name="Camera Lock Detect",CurrentValue=true,Callback=function(v) cameraLockEnabled=v end})
+Main:CreateToggle({Name="Camera Lock Detect",CurrentValue=true,Callback=function(v) cameraLockEnabled=v; playSound() end})
 Main:CreateButton({
 	Name="Rejoin",
 	Callback=function()
@@ -358,8 +518,8 @@ Main:CreateButton({
 	end
 })
 
-ESP:CreateToggle({Name="Highlight",CurrentValue=true,Callback=function(v) highlightEnabled=v; applyEffects() end})
-ESP:CreateToggle({Name="Hitbox",CurrentValue=true,Callback=function(v) hitboxEnabled=v; applyEffects() end})
+ESP:CreateToggle({Name="Highlight",CurrentValue=true,Callback=function(v) highlightEnabled=v; applyEffects(); playSound() end})
+ESP:CreateToggle({Name="Hitbox",CurrentValue=true,Callback=function(v) hitboxEnabled=v; applyEffects(); playSound() end})
 ESP:CreateInput({
 	Name="Tamaño Hitbox",
 	PlaceholderText="10-50",
@@ -369,43 +529,124 @@ ESP:CreateInput({
 		if size and size >= 10 and size <= 50 then
 			hitboxSize = size
 			applyEffects()
+			playSound()
 		end
 	end
 })
 
-ESP:CreateToggle({Name="ESP Box",CurrentValue=false,Callback=function(v) espBoxEnabled=v; applyEffects() end})
-ESP:CreateToggle({Name="ESP Bones",CurrentValue=false,Callback=function(v) espBonesEnabled=v; applyEffects() end})
-ESP:CreateToggle({Name="ESP Name",CurrentValue=false,Callback=function(v) espNameEnabled=v; applyEffects() end})
+ESP:CreateToggle({Name="ESP Box",CurrentValue=false,Callback=function(v) espBoxEnabled=v; applyEffects(); playSound() end})
+ESP:CreateToggle({Name="ESP Bones",CurrentValue=false,Callback=function(v) espBonesEnabled=v; applyEffects(); playSound() end})
+ESP:CreateToggle({Name="ESP Name",CurrentValue=false,Callback=function(v) espNameEnabled=v; applyEffects(); playSound() end})
 
 Movement:CreateToggle({
 	Name="Bunny Jump",
 	CurrentValue=false,
-	Callback=function(v) bunnyEnabled=v end
+	Callback=function(v) bunnyEnabled=v; playSound() end
+})
+
+Movement:CreateToggle({
+	Name="Bunny Jump Legit",
+	CurrentValue=false,
+	Callback=function(v) bunnyLegitEnabled=v; playSound() end
+})
+
+Movement:CreateToggle({
+	Name="Emote Jump",
+	CurrentValue=false,
+	Callback=function(v) emoteJumpEnabled=v; playSound() end
 })
 
 Movement:CreateLabel("Recomiendo poner 65 de impulso")
 
-local BunnyPresets = {
-	["Muy Bajo"] = {side=90,jump=45},
-	["Bajo"] = {side=130,jump=65},
-	["Medio"] = {side=140,jump=90},
-	["Alto"] = {side=220,jump=110},
-	["Muy Alto"] = {side=260,jump=130},
-	["Extremo"] = {side=320,jump=160}
-}
-
-Movement:CreateDropdown({
-	Name="Bunny Preset",
-	Options={"Muy Bajo","Bajo","Medio","Alto","Muy Alto","Extremo"},
-	CurrentOption="Medio",
-	Callback=function(v)
-		if BunnyPresets[v] then
-			SIDE_POWER = BunnyPresets[v].side
-			JUMP_POWER = BunnyPresets[v].jump
-		end
+Music:CreateButton({
+	Name="Sleeping City",
+	Callback=function()
+		currentMusic = "Sleeping City"
+		playSelectedMusic()
+		playSound()
 	end
 })
 
+Music:CreateButton({
+	Name="Voce na Mira",
+	Callback=function()
+		currentMusic = "Voce na Mira"
+		playSelectedMusic()
+		playSound()
+	end
+})
+
+Music:CreateButton({
+	Name="Gozalo",
+	Callback=function()
+		currentMusic = "Gozalo"
+		playSelectedMusic()
+		playSound()
+	end
+})
+
+Music:CreateButton({
+	Name="HYPNOSAES RENICHT ESPECTRAL",
+	Callback=function()
+		currentMusic = "HYPNOSAES RENICHT ESPECTRAL"
+		playSelectedMusic()
+		playSound()
+	end
+})
+
+Music:CreateButton({
+	Name="Nuts Lil Peep",
+	Callback=function()
+		currentMusic = "Nuts Lil Peep"
+		playSelectedMusic()
+		playSound()
+	end
+})
+
+Music:CreateButton({
+	Name="Mimosa 2000",
+	Callback=function()
+		currentMusic = "Mimosa 2000"
+		playSelectedMusic()
+		playSound()
+	end
+})
+
+Music:CreateButton({
+	Name="Conosco Tu Debilidad",
+	Callback=function()
+		currentMusic = "Conosco Tu Debilidad"
+		playSelectedMusic()
+		playSound()
+	end
+})
+
+Music:CreateButton({
+	Name="Todos Los Caminos Llevan a Roma",
+	Callback=function()
+		currentMusic = "Todos Los Caminos Llevan a Roma"
+		playSelectedMusic()
+		playSound()
+	end
+})
+
+Music:CreateButton({
+	Name="Detener Música",
+	Callback=function()
+		stopMusic()
+		playSound()
+	end
+})
+
+Settings:CreateToggle({Name="Sonido de Toggles",CurrentValue=true,Callback=function(v) soundEnabled=v; playSound() end})
+Settings:CreateButton({
+	Name="Detectar Side del Juego",
+	Callback=function()
+		local result = detectGameSide()
+		print("Resultado de detección: " .. result)
+		playSound()
+	end
+})
 Settings:CreateLabel("Configuraciones generales del script")
 
 Explicacion:CreateLabel("=== GUÍA DE USO DEL SCRIPT ===")
@@ -424,7 +665,16 @@ Explicacion:CreateLabel("• ESP Name: Muestra los nombres de los enemigos")
 Explicacion:CreateLabel("")
 Explicacion:CreateLabel("🏃 MOVEMENT TAB:")
 Explicacion:CreateLabel("• Bunny Jump: Activa/desactiva con ESPACIO o presiona E")
-Explicacion:CreateLabel("• Bunny Preset: Presets rápidos de salto")
+Explicacion:CreateLabel("• Bunny Jump Legit: Versión con fallos aleatorios para parecer más real")
+Explicacion:CreateLabel("• Emote Jump: Salto vertical con impulso, sin cancelar animaciones/emotes")
+Explicacion:CreateLabel("")
+Explicacion:CreateLabel("🎵 MUSIC TAB:")
+Explicacion:CreateLabel("• Botones de Canciones: Presiona para reproducir esa canción")
+Explicacion:CreateLabel("• Detener Música: Para la reproducción actual")
+Explicacion:CreateLabel("")
+Explicacion:CreateLabel("⚙️ SETTINGS TAB:")
+Explicacion:CreateLabel("• Sonido de Toggles: Activa/desactiva sonidos al cambiar opciones")
+Explicacion:CreateLabel("• Detectar Side del Juego: Verifica si el juego es client-side o server-side")
 Explicacion:CreateLabel("")
 Explicacion:CreateLabel("⚠️ TECLAS PRINCIPALES:")
 Explicacion:CreateLabel("• E = Activar/desactivar Bunny Jump")
@@ -469,5 +719,12 @@ UserInputService.InputBegan:Connect(function(input,gp)
 	if input.KeyCode == Enum.KeyCode.E then
 		bunnyEnabled = not bunnyEnabled
 		bunnyText.Visible = bunnyEnabled
+	end
+	if input.KeyCode == Enum.KeyCode.K then
+		Window:Minimize()
+		if soundEnabled then
+			hideMenuSound:Stop()
+			hideMenuSound:Play()
+		end
 	end
 end)
