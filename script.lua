@@ -1,3 +1,18 @@
+local highlightColor = Color3.fromRGB(100,0,244)
+local autoHighlightColor = Color3.fromRGB(255,80,80)
+local headSize = 25
+local maxSelectDistance = 120
+
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+local TeleportService = game:GetService("TeleportService")
+local Camera = workspace.CurrentCamera
+
+local LocalPlayer = Players.LocalPlayer
+
+local highlightEnabled = true
+local hitboxEnabled = true
 local selectedPlayer = nil
 local cameraLockEnabled = false
 local originalRootSizes = {}
@@ -27,51 +42,10 @@ local hideMenuSound = Instance.new("Sound")
 hideMenuSound.SoundId = "rbxassetid://12221944"
 hideMenuSound.Parent = workspace
 
-local selectedPlayerConnection = nil
-
-local function setSelectedPlayer(player)
-	if selectedPlayerConnection then
-		selectedPlayerConnection:Disconnect()
-		selectedPlayerConnection = nil
-	end
-	selectedPlayer = player
-	if player then
-		selectedPlayerConnection = player:GetPropertyChangedSignal("Character"):Connect(function()
-			applyEffects()
-		end)
-	end
-	applyEffects()
-end
-
-local espBoxEnabled = false
-local espBonesEnabled = false
-local espNameEnabled = false
-
-local bunnyEnabled = false
-local bunnyLegitEnabled = false
-local emoteJumpEnabled = false
-local SIDE_POWER = 140
-local JUMP_POWER = 90
-local COOLDOWN = 0.16
-local FREEZE_TIME = 0.15
-local holdingSpace = false
-local canJump = true
-local soundEnabled = true
-local toggleSound = Instance.new("Sound")
-toggleSound.SoundId = "rbxassetid://12221967"
-toggleSound.Parent = workspace
-
-local hideMenuSound = Instance.new("Sound")
-hideMenuSound.SoundId = "rbxassetid://12221944"
-hideMenuSound.Parent = workspace
-
 local function playSound()
 	if soundEnabled then
 		toggleSound:Stop()
 		toggleSound:Play()
-		print("Sonido de toggle reproducido") -- Debug
-	else
-		print("Sonidos deshabilitados") -- Debug
 	end
 end
 
@@ -280,7 +254,7 @@ local function applyESP(char, player)
 			local nameLabel = Instance.new("TextLabel")
 			nameLabel.Size = UDim2.new(1, 0, 1, 0)
 			nameLabel.BackgroundTransparency = 1
-			nameLabel.Text = player.DisplayName
+			nameLabel.Text = player.Name
 			nameLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
 			nameLabel.TextStrokeTransparency = 0.5
 			nameLabel.Font = Enum.Font.GothamBold
@@ -299,7 +273,7 @@ local function applyESP(char, player)
 			box.Name = "ESPBox"
 			box.Anchored = true
 			box.CanCollide = false
-			box.Transparency = 0.3
+			box.Transparency = 0.7
 			box.BrickColor = BrickColor.new("Bright red")
 			box.Material = Enum.Material.Plastic
 			box.Parent = char
@@ -438,7 +412,8 @@ RunService.RenderStepped:Connect(function(dt)
 	lastCameraTarget = target
 
 	if lockConfirm > 0.15 and target ~= selectedPlayer then
-		setSelectedPlayer(target)
+		selectedPlayer = target
+		applyEffects()
 	end
 end)
 
@@ -532,7 +507,7 @@ local Music = Window:CreateTab("Music", 4483362458)
 local Explicacion = Window:CreateTab("Explicacion", 4483362458)
 local Settings = Window:CreateTab("Settings", 4483362458)
 
-Main:CreateToggle({Name="Camera Lock Detect",CurrentValue=true,Callback=function(v) cameraLockEnabled=v; if not v then setSelectedPlayer(nil) else local target = getCharacterFromRay() if target then setSelectedPlayer(target) end end playSound() end})
+Main:CreateToggle({Name="Camera Lock Detect",CurrentValue=true,Callback=function(v) cameraLockEnabled=v; playSound() end})
 Main:CreateButton({
 	Name="Rejoin",
 	Callback=function()
@@ -701,7 +676,6 @@ Explicacion:CreateLabel("")
 Explicacion:CreateLabel("⚠️ TECLAS PRINCIPALES:")
 Explicacion:CreateLabel("• E = Activar/desactivar Bunny Jump")
 Explicacion:CreateLabel("• ESPACIO = Saltar (requiere Bunny Jump activado)")
-Explicacion:CreateLabel("• H = Minimizar menú")
 
 applyEffects()
 Rayfield:LoadConfiguration()
@@ -743,7 +717,7 @@ UserInputService.InputBegan:Connect(function(input,gp)
 		bunnyEnabled = not bunnyEnabled
 		bunnyText.Visible = bunnyEnabled
 	end
-	if input.KeyCode == Enum.KeyCode.H then
+	if input.KeyCode == Enum.KeyCode.K then
 		Window:Minimize()
 		if soundEnabled then
 			hideMenuSound:Stop()
