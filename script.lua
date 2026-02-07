@@ -714,7 +714,7 @@ if enteredKey == "goku" then
 
 	-- Panel principal
 	local Main = Instance.new("Frame", ScreenGui)
-	Main.Size = UDim2.new(0, 300, 0, 360)
+	Main.Size = UDim2.new(0, 250, 0, 300)
 	Main.Position = UDim2.new(0, 50, 0, 90)
 	Main.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
 	Main.BorderSizePixel = 0
@@ -756,13 +756,13 @@ if enteredKey == "goku" then
 
 	-- Burbuja NZ (minimizado)
 	local Bubble = Instance.new("TextButton", ScreenGui)
-	Bubble.Size = UDim2.new(0, 64, 0, 64)
+	Bubble.Size = UDim2.new(0, 50, 0, 50)
 	Bubble.Position = UDim2.new(0, 50, 0, 90)
 	Bubble.BackgroundColor3 = Color3.fromRGB(100, 0, 200)
 	Bubble.Text = "NZ"
 	Bubble.TextColor3 = Color3.new(1,1,1)
 	Bubble.Font = Enum.Font.GothamBlack
-	Bubble.TextSize = 24
+	Bubble.TextSize = 20
 	Bubble.Visible = false
 	Instance.new("UICorner", Bubble).CornerRadius = UDim.new(1, 0)
 
@@ -773,6 +773,38 @@ if enteredKey == "goku" then
 	Bubble.MouseButton1Click:Connect(function()
 		Main.Visible = true
 		Bubble.Visible = false
+	end)
+
+	-- Drag functionality for mobile
+	local dragging = false
+	local dragInput
+	local dragStart
+	local startPos
+
+	TitleFrame.InputBegan:Connect(function(input)
+		if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+			dragging = true
+			dragStart = input.Position
+			startPos = Main.Position
+			input.Changed:Connect(function()
+				if input.UserInputState == Enum.UserInputState.End then
+					dragging = false
+				end
+			end)
+		end
+	end)
+
+	TitleFrame.InputChanged:Connect(function(input)
+		if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+			dragInput = input
+		end
+	end)
+
+	RunService.RenderStepped:Connect(function()
+		if dragging and dragInput then
+			local delta = dragInput.Position - dragStart
+			Main.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+		end
 	end)
 
 	-- Sección Configuración
