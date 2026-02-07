@@ -54,6 +54,30 @@ button.MouseButton1Click:Connect(function()
 end)
 repeat task.wait() until enteredKey == "admin123" or enteredKey == "goku"
 
+if enteredKey == "goku" then
+    local rgbGui = Instance.new("ScreenGui", LocalPlayer.PlayerGui)
+    rgbGui.ResetOnSpawn = false
+    local rgbText = Instance.new("TextLabel", rgbGui)
+    rgbText.Size = UDim2.new(0, 400, 0, 50)
+    rgbText.Position = UDim2.new(0.5, -200, 0.5, -25)
+    rgbText.BackgroundTransparency = 1
+    rgbText.Text = "goku sos alto gay"
+    rgbText.Font = Enum.Font.GothamBold
+    rgbText.TextSize = 30
+    rgbText.TextXAlignment = Enum.TextXAlignment.Center
+
+    local hue = 0
+    local conn = RunService.RenderStepped:Connect(function()
+        hue = (hue + 0.01) % 1
+        rgbText.TextColor3 = Color3.fromHSV(hue, 1, 1)
+    end)
+
+    task.delay(3, function()
+        conn:Disconnect()
+        rgbGui:Destroy()
+    end)
+end
+
 local highlightEnabled = true
 local hitboxEnabled = true
 local selectedPlayer = nil
@@ -714,7 +738,7 @@ if enteredKey == "goku" then
 
 	-- Panel principal
 	local Main = Instance.new("Frame", ScreenGui)
-	Main.Size = UDim2.new(0, 250, 0, 300)
+	Main.Size = UDim2.new(0, 250, 0, 500)
 	Main.Position = UDim2.new(0, 50, 0, 90)
 	Main.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
 	Main.BorderSizePixel = 0
@@ -764,6 +788,7 @@ if enteredKey == "goku" then
 	Bubble.Font = Enum.Font.GothamBlack
 	Bubble.TextSize = 20
 	Bubble.Visible = false
+	Bubble.BackgroundTransparency = 0.2
 	Instance.new("UICorner", Bubble).CornerRadius = UDim.new(1, 0)
 
 	Minimize.MouseButton1Click:Connect(function()
