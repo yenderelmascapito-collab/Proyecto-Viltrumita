@@ -883,6 +883,7 @@ if enteredKey == "goku" then
 
 	local invisibleIconToggle = newToggle("Ícono Invisible", false, function(s) 
 		Bubble.BackgroundTransparency = s and 1 or 0.2
+		Bubble.TextTransparency = s and 1 or 0
 	end)
 
 	-- Cambiar color Highlight (botón)
@@ -946,22 +947,6 @@ if enteredKey == "goku" then
 		else
 			SizeBox.Text = "Inválido"
 		end
-	end)
-
-	-- FPS/Ping display
-	local Stats = Instance.new("TextLabel", ScreenGui)
-	Stats.Size = UDim2.new(0, 240, 0, 30)
-	Stats.Position = UDim2.new(0, 10, 0, 10)
-	Stats.BackgroundTransparency = 1
-	Stats.TextColor3 = Color3.new(1,1,1)
-	Stats.Font = Enum.Font.GothamBold
-	Stats.TextSize = 16
-	Stats.TextXAlignment = Enum.TextXAlignment.Left
-
-	RunService.RenderStepped:Connect(function(dt)
-		local fps = math.floor(1 / dt)
-		local ping = math.floor(LocalPlayer:GetNetworkPing() * 1000)
-		Stats.Text = "FPS: "..fps.." | Ping: "..ping.."ms"
 	end)
 
 	-- Rejoin button
