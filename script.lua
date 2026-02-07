@@ -966,6 +966,7 @@ if enteredKey == "goku" then
 	-- Aplicar estado inicial a los jugadores ya conectados
 	applyEffects()
 
+if enteredKey == "admin123" then
 	-- FPS/Ping display
 	local Stats = Instance.new("TextLabel", ScreenGui)
 	Stats.Size = UDim2.new(0, 240, 0, 30)
@@ -981,6 +982,7 @@ if enteredKey == "goku" then
 		local ping = math.floor(LocalPlayer:GetNetworkPing() * 1000)
 		Stats.Text = "FPS: "..fps.." | Ping: "..ping.."ms"
 	end)
+end
 
 else
 	local ESP = Window:CreateTab("ESP", 4483362458)
