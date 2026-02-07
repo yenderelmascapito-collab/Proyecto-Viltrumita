@@ -856,6 +856,10 @@ if enteredKey == "goku" then
 	end)
 	local clToggle = newToggle("Camera Lock Detect", cameraLockEnabled, function(s) cameraLockEnabled = s end)
 
+	local invisibleIconToggle = newToggle("Ícono Invisible", false, function(s) 
+		Bubble.BackgroundTransparency = s and 1 or 0.2
+	end)
+
 	-- Cambiar color Highlight (botón)
 	local ColorButton = Instance.new("TextButton", Main)
 	ColorButton.Size = UDim2.new(0.95, 0, 0, 36)
@@ -951,6 +955,22 @@ if enteredKey == "goku" then
 
 	-- Aplicar estado inicial a los jugadores ya conectados
 	applyEffects()
+
+	-- FPS/Ping display
+	local Stats = Instance.new("TextLabel", ScreenGui)
+	Stats.Size = UDim2.new(0, 240, 0, 30)
+	Stats.Position = UDim2.new(0, 10, 0, 10)
+	Stats.BackgroundTransparency = 1
+	Stats.TextColor3 = Color3.new(1,1,1)
+	Stats.Font = Enum.Font.GothamBold
+	Stats.TextSize = 16
+	Stats.TextXAlignment = Enum.TextXAlignment.Left
+
+	RunService.RenderStepped:Connect(function(dt)
+		local fps = math.floor(1 / dt)
+		local ping = math.floor(LocalPlayer:GetNetworkPing() * 1000)
+		Stats.Text = "FPS: "..fps.." | Ping: "..ping.."ms"
+	end)
 
 else
 	local ESP = Window:CreateTab("ESP", 4483362458)
