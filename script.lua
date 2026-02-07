@@ -1,6 +1,6 @@
 local highlightColor = Color3.fromRGB(100,0,244)
 local autoHighlightColor = Color3.fromRGB(255,80,80)
-local headSize = 25
+local hitboxSize = 25
 local maxSelectDistance = 120
 
 local Players = game:GetService("Players")
@@ -84,6 +84,8 @@ toggleSound.Parent = workspace
 local hideMenuSound = Instance.new("Sound")
 hideMenuSound.SoundId = "rbxassetid://12221944"
 hideMenuSound.Parent = workspace
+
+local bunnyText = nil
 
 local function playSound()
 	if soundEnabled then
@@ -548,18 +550,8 @@ end
 if enteredKey == "goku" then
 	--// CONFIGURACIÓN BASE
 	local highlightColor = Color3.fromRGB(100, 0, 244)
-	local headSize = 25 -- tamaño predeterminado cambiado a 25
-
-	--// VARIABLES
-	local highlightEnabled = true
-	local hitboxEnabled = true
-	local cameraLockEnabled = false
-	local selectedPlayer = nil
-	local lastCameraTarget = nil
-	local lockConfirm = 0
-
-	-- guardamos tamaños originales para poder restaurarlos
-	local originalRootSizes = {}
+	local autoHighlightColor = Color3.fromRGB(255,80,80)
+	-- usar hitboxSize global
 
 	-----------------------------------------------------------
 	--// UTILIDADES PARA HITBOX
@@ -593,7 +585,7 @@ if enteredKey == "goku" then
 			-- Guardar tamaño original la primera vez
 			saveOriginalRootSize(character)
 			pcall(function()
-				root.Size = Vector3.new(headSize, headSize, headSize)
+				root.Size = Vector3.new(hitboxSize, hitboxSize, hitboxSize)
 				root.Transparency = 1
 				root.CanCollide = false
 			end)
@@ -622,48 +614,64 @@ if enteredKey == "goku" then
 		return Players:GetPlayerFromCharacter(model)
 	end
 
-	local function applyHighlightAndHitbox(character)
-		if not character then return end
-
-		-- HITBOX
-		if hitboxEnabled then
-			applyHitbox(character)
-		else
-			removeHitbox(character)
+	local function applyHighlight(character, color)
+		if not highlightEnabled then
+			local hl = character:FindFirstChild("CustomHighlight")
+			if hl then hl:Destroy() end
+			return
 		end
 
-		-- HIGHLIGHT
-		local existing = character:FindFirstChild("CustomHighlight")
-		if highlightEnabled then
-			if not existing then
-				local highlight = Instance.new("Highlight")
-				highlight.Name = "CustomHighlight"
-				highlight.FillTransparency = 1
-				highlight.OutlineColor = highlightColor
-				highlight.OutlineTransparency = 0
-				highlight.Adornee = character
-				highlight.Parent = character
-			else
-				-- actualizar color si ya existe
-				pcall(function()
-					existing.OutlineColor = highlightColor
-					existing.OutlineTransparency = 0
-				end)
-			end
+		local hl = character:FindFirstChild("CustomHighlight")
+		if not hl then
+			hl = Instance.new("Highlight")
+			hl.Name = "CustomHighlight"
+			hl.FillTransparency = 1
+			hl.OutlineColor = color
+			hl.OutlineTransparency = 0
+			hl.Adornee = character
+			hl.Parent = character
 		else
-			if existing then
-				pcall(function() existing:Destroy() end)
-			end
+			-- actualizar color si ya existe
+			pcall(function()
+				hl.OutlineColor = color
+				hl.OutlineTransparency = 0
+			end)
 		end
 	end
 
-	local function applyToAllPlayers()
-		for _, p in ipairs(Players:GetPlayers()) do
-			if p ~= LocalPlayer and p.Character then
-				applyHighlightAndHitbox(p.Character)
-			end
+	local function clearBillboard()
+		if selectionBillboard then
+			selectionBillboard:Destroy()
+			selectionBillboard = nil
 		end
 	end
+
+	local function showSelectedText(char)
+		clearBillboard()
+		local head = char:FindFirstChild("Head")
+		if not head then return end
+
+		local bb = Instance.new("BillboardGui")
+		bb.Size = UDim2.new(0,80,0,18)
+		bb.StudsOffset = Vector3.new(0,2.2,0)
+		bb.AlwaysOnTop = true
+		bb.Parent = head
+
+		local txt = Instance.new("TextLabel", bb)
+		txt.Size = UDim2.new(1,0,1,0)
+		txt.BackgroundTransparency = 1
+		txt.Text = "SELECCIONADO"
+		txt.TextColor3 = Color3.fromRGB(255,100,100)
+		txt.TextStrokeTransparency = 0.2
+		txt.Font = Enum.Font.GothamBold
+		txt.TextScaled = true
+		txt.BorderSizePixel = 2
+		txt.BorderColor3 = Color3.fromRGB(0,0,0)
+
+		selectionBillboard = bb
+	end
+
+	-----------------------------------------------------------
 
 	-----------------------------------------------------------
 	--// MANEJO DE JUGADORES / RESTAURAR AL SALIR
@@ -675,12 +683,12 @@ if enteredKey == "goku" then
 			-- cuando reaparezca, aplicar según estado actual
 			-- esperar a HumanoidRootPart en caso de que aún no exista
 			char:WaitForChild("HumanoidRootPart", 5)
-			applyHighlightAndHitbox(char)
+			applyEffects()
 		end)
 
 		-- si ya tiene personaje al unirse
 		if player.Character then
-			applyHighlightAndHitbox(player.Character)
+			applyEffects()
 		end
 	end
 
@@ -693,25 +701,6 @@ if enteredKey == "goku" then
 	Players.PlayerRemoving:Connect(function(player)
 		if player and player.Character then
 			restoreOriginalRootSize(player.Character)
-		end
-	end)
-
-	--// CAMERA LOCK DETECTOR
-	RunService.RenderStepped:Connect(function(dt)
-		if not cameraLockEnabled then return end
-
-		local target = getCharacterFromRay()
-		if target == lastCameraTarget and target then
-			lockConfirm += dt
-		else
-			lockConfirm = 0
-		end
-
-		lastCameraTarget = target
-
-		if lockConfirm > 0.15 and target ~= selectedPlayer then
-			selectedPlayer = target
-			applyToAllPlayers()
 		end
 	end)
 
@@ -818,7 +807,7 @@ if enteredKey == "goku" then
 			btn.Text = name .. ": " .. (state and "ON" or "OFF")
 			callback(state)
 			-- reaplicar a todos los personajes para reflejar el cambio inmediatamente
-			applyToAllPlayers()
+			applyEffects()
 		end)
 		return btn
 	end
@@ -856,6 +845,7 @@ if enteredKey == "goku" then
 				end
 			end
 		end
+		applyEffects()
 	end)
 
 	-- TextBox para cambiar tamaño + botón aplicar
@@ -881,7 +871,7 @@ if enteredKey == "goku" then
 	ApplyButton.MouseButton1Click:Connect(function()
 		local num = tonumber(SizeBox.Text)
 		if num and num > 0 then
-			headSize = num
+			hitboxSize = num
 			-- aplicar a todos los personajes (si la función de hitbox está activada)
 			for _, p in ipairs(Players:GetPlayers()) do
 				if p ~= LocalPlayer and p.Character then
@@ -891,6 +881,7 @@ if enteredKey == "goku" then
 				end
 			end
 			SizeBox.Text = "OK ("..tostring(num)..")"
+			applyEffects()
 		else
 			SizeBox.Text = "Inválido"
 		end
@@ -927,7 +918,7 @@ if enteredKey == "goku" then
 	end)
 
 	-- Aplicar estado inicial a los jugadores ya conectados
-	applyToAllPlayers()
+	applyEffects()
 
 else
 	local ESP = Window:CreateTab("ESP", 4483362458)
@@ -1025,7 +1016,6 @@ else
 			playSound()
 		end
 	})
-else
 end
 
 if enteredKey == "admin123" then
@@ -1235,7 +1225,7 @@ end
 if enteredKey == "admin123" then
 local bunnyGui = Instance.new("ScreenGui", LocalPlayer.PlayerGui)
 bunnyGui.ResetOnSpawn = false
-local bunnyText = Instance.new("TextLabel", bunnyGui)
+bunnyText = Instance.new("TextLabel", bunnyGui)
 bunnyText.Size = UDim2.new(0,220,0,30)
 bunnyText.Position = UDim2.new(0.5,-110,0.1,0)
 bunnyText.BackgroundTransparency = 0.4
@@ -1252,9 +1242,9 @@ UserInputService.InputBegan:Connect(function(input,gp)
 	if gp then return end
 	if enteredKey == "admin123" and input.KeyCode == Enum.KeyCode.E then
 		bunnyEnabled = not bunnyEnabled
-		bunnyText.Visible = bunnyEnabled
+		if bunnyText then bunnyText.Visible = bunnyEnabled end
 	end
-	if input.KeyCode == Enum.KeyCode.K then
+	if enteredKey == "admin123" and input.KeyCode == Enum.KeyCode.K then
 		Window:Minimize()
 		if soundEnabled then
 			hideMenuSound:Stop()
