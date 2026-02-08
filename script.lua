@@ -10,9 +10,6 @@ local TeleportService = game:GetService("TeleportService")
 local Camera = workspace.CurrentCamera
 
 local LocalPlayer = Players.LocalPlayer
-local Window = nil
-
-print("PV Hub script iniciado.")
 
 -- Key system
 local keyGui = Instance.new("ScreenGui", LocalPlayer.PlayerGui)
@@ -55,18 +52,9 @@ button.MouseButton1Click:Connect(function()
         textBox.Text = ""
     end
 end)
-local startTime = tick()
-repeat task.wait() until enteredKey == "admin123" or enteredKey == "goku" or tick() - startTime > 30
-if not enteredKey then
-    enteredKey = "goku"
-    keyGui:Destroy()
-    print("Timeout en sistema de key, usando 'goku' por defecto.")
-end
-
-print("Sistema de key completado. Key: " .. enteredKey)
+repeat task.wait() until enteredKey == "admin123" or enteredKey == "goku"
 
 if enteredKey == "goku" then
-	print("Usando UI personalizada para key 'goku'.")
     local rgbGui = Instance.new("ScreenGui", LocalPlayer.PlayerGui)
     rgbGui.ResetOnSpawn = false
     local rgbText = Instance.new("TextLabel", rgbGui)
@@ -576,18 +564,11 @@ RunService.RenderStepped:Connect(function()
 end)
 
 if enteredKey == "admin123" then
-	print("Intentando cargar Rayfield...")
-	local success, result = pcall(function() return loadstring(game:HttpGet("https://sirius.menu/rayfield"))() end)
-	if success then
-		print("Rayfield cargado exitosamente.")
-		local Rayfield = result
-		Window = Rayfield:CreateWindow({
-			Name="PV Hub NEXT",
-			ConfigurationSaving={Enabled=true,FileName="PVHub"}
-		})
-	else
-		warn("Fallo al cargar Rayfield: " .. tostring(result))
-	end
+	local Rayfield = loadstring(game:HttpGet("https://sirius.menu/rayfield"))()
+	local Window = Rayfield:CreateWindow({
+		Name="PV Hub NEXT",
+		ConfigurationSaving={Enabled=true,FileName="PVHub"}
+	})
 end
 
 if enteredKey == "goku" then
@@ -985,13 +966,209 @@ if enteredKey == "goku" then
 	-- Aplicar estado inicial a los jugadores ya conectados
 	applyEffects()
 
-if enteredKey == "admin123" and Window then
-	local Main = Window:CreateTab("Main", 4483362458)
-	local ESP = Window:CreateTab("ESP/Aiming", 4483362458)
-	local Movement = Window:CreateTab("Movement", 4483362458)
+	-- === ESP SPAWN ===
+	local espSpawnEnabled = false
+	local spawnHighlights = {}
+
+	local function clearSpawnHighlights()
+		for _, h in ipairs(spawnHighlights) do
+			if h and h.Parent then h:Destroy() end
+		end
+		spawnHighlights = {}
+	end
+
+	local function showSpawnHighlights()
+		clearSpawnHighlights()
+		for _, obj in ipairs(workspace:GetDescendants()) do
+			if obj:IsA("BasePart") and (obj.Name:lower():find("spawn") or obj.Name:lower():find("spwn")) then
+				local hl = Instance.new("Highlight")
+				hl.FillColor = Color3.fromRGB(0,255,0)
+				hl.OutlineColor = Color3.fromRGB(0,255,0)
+				hl.FillTransparency = 0.5
+				hl.OutlineTransparency = 0
+				hl.Adornee = obj
+				hl.Parent = obj
+				table.insert(spawnHighlights, hl)
+			end
+		end
+	end
+
+	local espSpawnToggle = newToggle("ESP Spawn", false, function(s)
+		espSpawnEnabled = s
+		if espSpawnEnabled then
+			showSpawnHighlights()
+		else
+			clearSpawnHighlights()
+		end
+	end)
+
+	-- Limpiar highlights al cerrar el script/UI
+	ScreenGui.AncestryChanged:Connect(function(_, parent)
+		if not parent then clearSpawnHighlights() end
+	end)
+
+	-- === FOLLOW MODE ===
+	local followEnabled = false
+	local followText = Instance.new("TextLabel", ScreenGui)
+	followText.Size = UDim2.new(0, 220, 0, 30)
+	followText.Position = UDim2.new(0.5, -110, 0.15, 0)
+	followText.BackgroundTransparency = 0.4
+	followText.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+	followText.TextColor3 = Color3.fromRGB(255, 255, 120)
+	followText.Font = Enum.Font.GothamBold
+	followText.TextSize = 16
+	followText.Text = "FOLLOW DESACTIVADO"
+	followText.Visible = false
+	followText.BorderSizePixel = 0
+
+	-- === TELEPORT G ===
+	UserInputService.InputBegan:Connect(function(input, gp)
+		if gp then return end
+		if input.KeyCode == Enum.KeyCode.G then
+			followEnabled = not followEnabled
+			followText.Text = followEnabled and "FOLLOW ACTIVADO" or "FOLLOW DESACTIVADO"
+			followText.Visible = true
+			task.delay(2, function()
+				followText.Visible = false
+			end)
+			playSound()
+		end
+	end)
+
+	-- Follow loop
+	RunService.RenderStepped:Connect(function()
+		if followEnabled and selectedPlayer and selectedPlayer.Character and LocalPlayer.Character then
+			local targetRoot = selectedPlayer.Character:FindFirstChild("HumanoidRootPart")
+			local myRoot = LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+			if targetRoot and myRoot then
+				myRoot.CFrame = targetRoot.CFrame * CFrame.new(0, 0, -2)
+			end
+		end
+	end)
+
+if enteredKey == "admin123" then
+	-- FPS/Ping display
+	local Stats = Instance.new("TextLabel", ScreenGui)
+	Stats.Size = UDim2.new(0, 240, 0, 30)
+	Stats.Position = UDim2.new(0, 10, 0, 10)
+	Stats.BackgroundTransparency = 1
+	Stats.TextColor3 = Color3.new(1,1,1)
+	Stats.Font = Enum.Font.GothamBold
+	Stats.TextSize = 16
+	Stats.TextXAlignment = Enum.TextXAlignment.Left
+
+	RunService.RenderStepped:Connect(function(dt)
+		local fps = math.floor(1 / dt)
+		local ping = math.floor(LocalPlayer:GetNetworkPing() * 1000)
+		Stats.Text = "FPS: "..fps.." | Ping: "..ping.."ms"
+	end)
+end
+
+else
+	local ESP = Window:CreateTab("ESP", 4483362458)
+	ESP:CreateToggle({Name="Hitbox",CurrentValue=true,Callback=function(v) hitboxEnabled=v; applyEffects(); playSound() end})
+	ESP:CreateInput({
+		Name="Tamaño Hitbox",
+		PlaceholderText="10-50",
+		RemoveTextAfterFocusLost=false,
+		Callback=function(v)
+			local size = tonumber(v)
+			if size and size >= 10 and size <= 50 then
+				hitboxSize = size
+				applyEffects()
+				playSound()
+			end
+		end
+	})
 	local Music = Window:CreateTab("Music", 4483362458)
-	local Explicacion = Window:CreateTab("Explicacion", 4483362458)
-	local Settings = Window:CreateTab("Settings", 4483362458)
+	Music:CreateButton({
+		Name="Sleeping City",
+		Callback=function()
+			currentMusic = "Sleeping City"
+			playSelectedMusic()
+			playSound()
+		end
+	})
+	Music:CreateButton({
+		Name="Voce na Mira",
+		Callback=function()
+			currentMusic = "Voce na Mira"
+			playSelectedMusic()
+			playSound()
+		end
+	})
+	Music:CreateButton({
+		Name="Gozalo",
+		Callback=function()
+			currentMusic = "Gozalo"
+			playSelectedMusic()
+			playSound()
+		end
+	})
+	Music:CreateButton({
+		Name="HYPNOSAES RENICHT ESPECTRAL",
+		Callback=function()
+			currentMusic = "HYPNOSAES RENICHT ESPECTRAL"
+			playSelectedMusic()
+			playSound()
+		end
+	})
+	Music:CreateButton({
+		Name="Nuts Lil Peep",
+		Callback=function()
+			currentMusic = "Nuts Lil Peep"
+			playSelectedMusic()
+			playSound()
+		end
+	})
+	Music:CreateButton({
+		Name="Mimosa 2000",
+		Callback=function()
+			currentMusic = "Mimosa 2000"
+			playSelectedMusic()
+			playSound()
+		end
+	})
+	Music:CreateButton({
+		Name="Conosco Tu Debilidad",
+		Callback=function()
+			currentMusic = "Conosco Tu Debilidad"
+			playSelectedMusic()
+			playSound()
+		end
+	})
+	Music:CreateButton({
+		Name="Todos Los Caminos Llevan a Roma",
+		Callback=function()
+			currentMusic = "Todos Los Caminos Llevan a Roma"
+			playSelectedMusic()
+			playSound()
+		end
+	})
+	Music:CreateButton({
+		Name="Detener Música",
+		Callback=function()
+			stopMusic()
+			playSound()
+		end
+	})
+	local UI = Window:CreateTab("UI", 4483362458)
+	UI:CreateButton({
+		Name="Toggle UI",
+		Callback=function()
+			Window.Minimized = not Window.Minimized
+			playSound()
+		end
+	})
+end
+
+if enteredKey == "admin123" then
+	local Main = Window:CreateTab("Main", 4483362458)
+local ESP = Window:CreateTab("ESP/Aiming", 4483362458)
+local Movement = Window:CreateTab("Movement", 4483362458)
+local Music = Window:CreateTab("Music", 4483362458)
+local Explicacion = Window:CreateTab("Explicacion", 4483362458)
+local Settings = Window:CreateTab("Settings", 4483362458)
 
 Main:CreateToggle({Name="Camera Lock Detect",CurrentValue=true,Callback=function(v) cameraLockEnabled=v; playSound() end})
 Main:CreateButton({
@@ -1165,9 +1342,9 @@ Explicacion:CreateLabel("• ESPACIO = Saltar (requiere Bunny Jump activado)")
 
 end
 
-if enteredKey == "admin123" and Window then
+if enteredKey == "admin123" then
 	applyEffects()
-	Window:LoadConfiguration()
+	Rayfield:LoadConfiguration()
 end
 
 if enteredKey == "admin123" then
@@ -1212,9 +1389,7 @@ UserInputService.InputBegan:Connect(function(input,gp)
 		if bunnyText then bunnyText.Visible = bunnyEnabled end
 	end
 	if enteredKey == "admin123" and input.KeyCode == Enum.KeyCode.K then
-		if Window then
-			Window:Minimize()
-		end
+		Window:Minimize()
 		if soundEnabled then
 			hideMenuSound:Stop()
 			hideMenuSound:Play()
