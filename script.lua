@@ -970,6 +970,28 @@ if enteredKey == "goku" then
 	editDashBtn.Visible = true
 	editDashBtn.BorderSizePixel = 0
 	Instance.new("UICorner", editDashBtn).CornerRadius = UDim.new(0, 10)
+	
+    -- Toggle para mostrar/ocultar Dash y Edit
+    local showDashAndEdit = true
+    local dashEditToggle = Instance.new("TextButton", Main)
+    dashEditToggle.Size = UDim2.new(0.95, 0, 0, 36)
+    dashEditToggle.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
+    dashEditToggle.TextColor3 = Color3.new(1,1,1)
+    dashEditToggle.Font = Enum.Font.Gotham
+    dashEditToggle.TextSize = 15
+    dashEditToggle.Text = "Dash/Edit: ON"
+    Instance.new("UICorner", dashEditToggle).CornerRadius = UDim.new(0, 10)
+    dashEditToggle.LayoutOrder = 2
+
+    dashEditToggle.MouseButton1Click:Connect(function()
+        showDashAndEdit = not showDashAndEdit
+        dashEditToggle.Text = "Dash/Edit: " .. (showDashAndEdit and "ON" or "OFF")
+        dashButton.Visible = showDashAndEdit
+        editDashBtn.Visible = showDashAndEdit
+    end)
+    -- Estado inicial
+    dashButton.Visible = showDashAndEdit
+    editDashBtn.Visible = showDashAndEdit
 
 	editDashBtn.MouseButton1Click:Connect(function()
 		editDashEnabled = not editDashEnabled
