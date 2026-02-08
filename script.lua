@@ -54,29 +54,6 @@ button.MouseButton1Click:Connect(function()
 end)
 repeat task.wait() until enteredKey == "admin123" or enteredKey == "goku"
 
-if enteredKey == "goku" then
-    local rgbGui = Instance.new("ScreenGui", LocalPlayer.PlayerGui)
-    rgbGui.ResetOnSpawn = false
-    local rgbText = Instance.new("TextLabel", rgbGui)
-    rgbText.Size = UDim2.new(0, 400, 0, 50)
-    rgbText.Position = UDim2.new(0.5, -200, 0.5, -25)
-    rgbText.BackgroundTransparency = 1
-    rgbText.Text = "goku sos alto gay"
-    rgbText.Font = Enum.Font.GothamBold
-    rgbText.TextSize = 30
-    rgbText.TextXAlignment = Enum.TextXAlignment.Center
-
-    local hue = 0
-    local conn = RunService.RenderStepped:Connect(function()
-        hue = (hue + 0.01) % 1
-        rgbText.TextColor3 = Color3.fromHSV(hue, 1, 1)
-    end)
-
-    task.delay(3, function()
-        conn:Disconnect()
-        rgbGui:Destroy()
-    end)
-end
 
 local highlightEnabled = true
 local hitboxEnabled = true
@@ -966,45 +943,81 @@ if enteredKey == "goku" then
 	-- Aplicar estado inicial a los jugadores ya conectados
 	applyEffects()
 
-	-- === ESP SPAWN ===
-	local espSpawnEnabled = false
-	local spawnHighlights = {}
 
-	local function clearSpawnHighlights()
-		for _, h in ipairs(spawnHighlights) do
-			if h and h.Parent then h:Destroy() end
-		end
-		spawnHighlights = {}
-	end
+	-- DASH BUTTON (Q)
+	local dashButton = Instance.new("TextButton", ScreenGui)
+	dashButton.Size = UDim2.new(0, 60, 0, 60)
+	dashButton.Position = UDim2.new(0.8, 0, 0.8, 0)
+	dashButton.BackgroundColor3 = Color3.fromRGB(80, 80, 200)
+	dashButton.Text = "Q"
+	dashButton.TextColor3 = Color3.new(1,1,1)
+	dashButton.Font = Enum.Font.GothamBlack
+	dashButton.TextSize = 32
+	dashButton.Visible = true
+	dashButton.BorderSizePixel = 0
+	Instance.new("UICorner", dashButton).CornerRadius = UDim.new(1, 0)
 
-	local function showSpawnHighlights()
-		clearSpawnHighlights()
-		for _, obj in ipairs(workspace:GetDescendants()) do
-			if obj:IsA("BasePart") and (obj.Name:lower():find("spawn") or obj.Name:lower():find("spwn")) then
-				local hl = Instance.new("Highlight")
-				hl.FillColor = Color3.fromRGB(0,255,0)
-				hl.OutlineColor = Color3.fromRGB(0,255,0)
-				hl.FillTransparency = 0.5
-				hl.OutlineTransparency = 0
-				hl.Adornee = obj
-				hl.Parent = obj
-				table.insert(spawnHighlights, hl)
-			end
-		end
-	end
+	-- Edit mode para mover el botón
+	local editDashEnabled = false
+	local editDashBtn = Instance.new("TextButton", ScreenGui)
+	editDashBtn.Size = UDim2.new(0, 80, 0, 32)
+	editDashBtn.Position = UDim2.new(0.8, 70, 0.8, 0)
+	editDashBtn.BackgroundColor3 = Color3.fromRGB(200, 180, 60)
+	editDashBtn.Text = "Edit: OFF"
+	editDashBtn.TextColor3 = Color3.new(0,0,0)
+	editDashBtn.Font = Enum.Font.GothamBold
+	editDashBtn.TextSize = 16
+	editDashBtn.Visible = true
+	editDashBtn.BorderSizePixel = 0
+	Instance.new("UICorner", editDashBtn).CornerRadius = UDim.new(0, 10)
 
-	local espSpawnToggle = newToggle("ESP Spawn", false, function(s)
-		espSpawnEnabled = s
-		if espSpawnEnabled then
-			showSpawnHighlights()
-		else
-			clearSpawnHighlights()
+	editDashBtn.MouseButton1Click:Connect(function()
+		editDashEnabled = not editDashEnabled
+		editDashBtn.Text = editDashEnabled and "Edit: ON" or "Edit: OFF"
+	end)
+
+	-- Drag funcionalidad para el botón Dash
+	local draggingDash = false
+	local dragInputDash, dragStartDash, startPosDash
+
+	dashButton.InputBegan:Connect(function(input)
+		if not editDashEnabled then return end
+		if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+			draggingDash = true
+			dragStartDash = input.Position
+			startPosDash = dashButton.Position
+			input.Changed:Connect(function()
+				if input.UserInputState == Enum.UserInputState.End then
+					draggingDash = false
+				end
+			end)
 		end
 	end)
 
-	-- Limpiar highlights al cerrar el script/UI
-	ScreenGui.AncestryChanged:Connect(function(_, parent)
-		if not parent then clearSpawnHighlights() end
+	dashButton.InputChanged:Connect(function(input)
+		if not editDashEnabled then return end
+		if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+			dragInputDash = input
+		end
+	end)
+
+	RunService.RenderStepped:Connect(function()
+		if editDashEnabled and draggingDash and dragInputDash then
+			local delta = dragInputDash.Position - dragStartDash
+			dashButton.Position = UDim2.new(startPosDash.X.Scale, startPosDash.X.Offset + delta.X, startPosDash.Y.Scale, startPosDash.Y.Offset + delta.Y)
+		end
+	end)
+
+	-- Al presionar el botón Dash, simula la Q
+	dashButton.MouseButton1Click:Connect(function()
+		if not editDashEnabled then
+			-- Simular Input Q
+			local virtualInput = game:GetService("VirtualInputManager")
+			if virtualInput then
+				virtualInput:SendKeyEvent(true, Enum.KeyCode.Q, false, game)
+				virtualInput:SendKeyEvent(false, Enum.KeyCode.Q, false, game)
+			end
+		end
 	end)
 
 	-- === FOLLOW MODE ===
