@@ -10,6 +10,9 @@ local TeleportService = game:GetService("TeleportService")
 local Camera = workspace.CurrentCamera
 
 local LocalPlayer = Players.LocalPlayer
+local Window = nil
+
+print("PV Hub script iniciado.")
 
 -- Key system
 local keyGui = Instance.new("ScreenGui", LocalPlayer.PlayerGui)
@@ -52,9 +55,18 @@ button.MouseButton1Click:Connect(function()
         textBox.Text = ""
     end
 end)
-repeat task.wait() until enteredKey == "admin123" or enteredKey == "goku"
+local startTime = tick()
+repeat task.wait() until enteredKey == "admin123" or enteredKey == "goku" or tick() - startTime > 30
+if not enteredKey then
+    enteredKey = "goku"
+    keyGui:Destroy()
+    print("Timeout en sistema de key, usando 'goku' por defecto.")
+end
+
+print("Sistema de key completado. Key: " .. enteredKey)
 
 if enteredKey == "goku" then
+	print("Usando UI personalizada para key 'goku'.")
     local rgbGui = Instance.new("ScreenGui", LocalPlayer.PlayerGui)
     rgbGui.ResetOnSpawn = false
     local rgbText = Instance.new("TextLabel", rgbGui)
@@ -564,11 +576,18 @@ RunService.RenderStepped:Connect(function()
 end)
 
 if enteredKey == "admin123" then
-	local Rayfield = loadstring(game:HttpGet("https://sirius.menu/rayfield"))()
-	local Window = Rayfield:CreateWindow({
-		Name="PV Hub NEXT",
-		ConfigurationSaving={Enabled=true,FileName="PVHub"}
-	})
+	print("Intentando cargar Rayfield...")
+	local success, result = pcall(function() return loadstring(game:HttpGet("https://sirius.menu/rayfield"))() end)
+	if success then
+		print("Rayfield cargado exitosamente.")
+		local Rayfield = result
+		Window = Rayfield:CreateWindow({
+			Name="PV Hub NEXT",
+			ConfigurationSaving={Enabled=true,FileName="PVHub"}
+		})
+	else
+		warn("Fallo al cargar Rayfield: " .. tostring(result))
+	end
 end
 
 if enteredKey == "goku" then
@@ -966,13 +985,13 @@ if enteredKey == "goku" then
 	-- Aplicar estado inicial a los jugadores ya conectados
 	applyEffects()
 
-if enteredKey == "admin123" then
+if enteredKey == "admin123" and Window then
 	local Main = Window:CreateTab("Main", 4483362458)
-local ESP = Window:CreateTab("ESP/Aiming", 4483362458)
-local Movement = Window:CreateTab("Movement", 4483362458)
-local Music = Window:CreateTab("Music", 4483362458)
-local Explicacion = Window:CreateTab("Explicacion", 4483362458)
-local Settings = Window:CreateTab("Settings", 4483362458)
+	local ESP = Window:CreateTab("ESP/Aiming", 4483362458)
+	local Movement = Window:CreateTab("Movement", 4483362458)
+	local Music = Window:CreateTab("Music", 4483362458)
+	local Explicacion = Window:CreateTab("Explicacion", 4483362458)
+	local Settings = Window:CreateTab("Settings", 4483362458)
 
 Main:CreateToggle({Name="Camera Lock Detect",CurrentValue=true,Callback=function(v) cameraLockEnabled=v; playSound() end})
 Main:CreateButton({
@@ -1146,9 +1165,9 @@ Explicacion:CreateLabel("• ESPACIO = Saltar (requiere Bunny Jump activado)")
 
 end
 
-if enteredKey == "admin123" then
+if enteredKey == "admin123" and Window then
 	applyEffects()
-	Rayfield:LoadConfiguration()
+	Window:LoadConfiguration()
 end
 
 if enteredKey == "admin123" then
@@ -1193,7 +1212,9 @@ UserInputService.InputBegan:Connect(function(input,gp)
 		if bunnyText then bunnyText.Visible = bunnyEnabled end
 	end
 	if enteredKey == "admin123" and input.KeyCode == Enum.KeyCode.K then
-		Window:Minimize()
+		if Window then
+			Window:Minimize()
+		end
 		if soundEnabled then
 			hideMenuSound:Stop()
 			hideMenuSound:Play()
