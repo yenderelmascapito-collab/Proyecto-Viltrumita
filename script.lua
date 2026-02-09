@@ -726,16 +726,25 @@ if enteredKey == "goku" then
 	Main.CanvasSize = UDim2.new(0, 0, 0, 0)
 	Instance.new("UICorner", Main).CornerRadius = UDim.new(0, 12)
 
+	-- Contenedor de contenido
+	local Content = Instance.new("Frame", Main)
+	Content.Size = UDim2.new(1, 0, 0, 0)
+	Content.BackgroundTransparency = 1
+
 	-- Layout (orden automático)
-	local UIList = Instance.new("UIListLayout", Main)
+	local UIList = Instance.new("UIListLayout", Content)
 	UIList.FillDirection = Enum.FillDirection.Vertical
 	UIList.Padding = UDim.new(0, 10)
 	UIList.HorizontalAlignment = Enum.HorizontalAlignment.Center
 	UIList.SortOrder = Enum.SortOrder.LayoutOrder
-	UIList.AutomaticCanvasSize = Enum.AutomaticSize.Y
+
+	-- Actualizar CanvasSize del ScrollingFrame basado en el contenido
+	UIList:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+		Main.CanvasSize = UDim2.new(0, 0, 0, UIList.AbsoluteContentSize.Y + 20)
+	end)
 
 	-- TÍTULO (container para título + minimizar)
-	local TitleFrame = Instance.new("Frame", Main)
+	local TitleFrame = Instance.new("Frame", Content)
 	TitleFrame.Size = UDim2.new(1, -20, 0, 44)
 	TitleFrame.BackgroundTransparency = 1
 	TitleFrame.LayoutOrder = 0
@@ -816,7 +825,7 @@ if enteredKey == "goku" then
 
 	-- Sección Configuración
 	local function newSeparator(title)
-		local lbl = Instance.new("TextLabel", Main)
+		local lbl = Instance.new("TextLabel", Content)
 		lbl.Size = UDim2.new(0.95, 0, 0, 26)
 		lbl.BackgroundTransparency = 1
 		lbl.Text = title
@@ -831,7 +840,7 @@ if enteredKey == "goku" then
 
 	-- Toggle helper que además reaplica a todos los players
 	local function newToggle(name, default, callback)
-		local btn = Instance.new("TextButton", Main)
+		local btn = Instance.new("TextButton", Content)
 		btn.Size = UDim2.new(0.95, 0, 0, 36)
 		btn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
 		btn.TextColor3 = Color3.new(1,1,1)
@@ -852,6 +861,7 @@ if enteredKey == "goku" then
 	end
 
 	local hlToggle = newToggle("Highlight", highlightEnabled, function(s) highlightEnabled = s end)
+	hlToggle.LayoutOrder = 2
 	local hbToggle = newToggle("Hitbox", hitboxEnabled, function(s) 
 		hitboxEnabled = s 
 		-- si lo apagamos, restaurar tamaño original de todos los personajes
@@ -861,15 +871,18 @@ if enteredKey == "goku" then
 			end
 		end
 	end)
+	hbToggle.LayoutOrder = 3
 	local clToggle = newToggle("Camera Lock Detect", cameraLockEnabled, function(s) cameraLockEnabled = s end)
+	clToggle.LayoutOrder = 4
 
 	local invisibleIconToggle = newToggle("Ícono Invisible", false, function(s) 
 		Bubble.BackgroundTransparency = s and 1 or 0.2
 		Bubble.TextTransparency = s and 1 or 0
 	end)
+	invisibleIconToggle.LayoutOrder = 5
 
 	-- Cambiar color Highlight (botón)
-	local ColorButton = Instance.new("TextButton", Main)
+	local ColorButton = Instance.new("TextButton", Content)
 	ColorButton.Size = UDim2.new(0.95, 0, 0, 36)
 	ColorButton.BackgroundColor3 = Color3.fromRGB(90, 20, 200)
 	ColorButton.Text = "Cambiar color Highlight (aleatorio)"
@@ -877,6 +890,7 @@ if enteredKey == "goku" then
 	ColorButton.Font = Enum.Font.Gotham
 	ColorButton.TextSize = 15
 	Instance.new("UICorner", ColorButton).CornerRadius = UDim.new(0, 10)
+	ColorButton.LayoutOrder = 6
 
 	ColorButton.MouseButton1Click:Connect(function()
 		highlightColor = Color3.fromHSV(math.random(), 1, 1)
@@ -893,7 +907,7 @@ if enteredKey == "goku" then
 	end)
 
 	-- TextBox para cambiar tamaño + botón aplicar
-	local SizeBox = Instance.new("TextBox", Main)
+	local SizeBox = Instance.new("TextBox", Content)
 	SizeBox.Size = UDim2.new(0.95, 0, 0, 36)
 	SizeBox.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
 	SizeBox.PlaceholderText = "Tamaño Hitbox (ej: 20)"
@@ -902,8 +916,9 @@ if enteredKey == "goku" then
 	SizeBox.Font = Enum.Font.Gotham
 	SizeBox.TextSize = 15
 	Instance.new("UICorner", SizeBox).CornerRadius = UDim.new(0, 10)
+	SizeBox.LayoutOrder = 7
 
-	local ApplyButton = Instance.new("TextButton", Main)
+	local ApplyButton = Instance.new("TextButton", Content)
 	ApplyButton.Size = UDim2.new(0.95, 0, 0, 36)
 	ApplyButton.BackgroundColor3 = Color3.fromRGB(80, 170, 80)
 	ApplyButton.Text = "Aplicar tamaño"
@@ -911,6 +926,7 @@ if enteredKey == "goku" then
 	ApplyButton.Font = Enum.Font.Gotham
 	ApplyButton.TextSize = 15
 	Instance.new("UICorner", ApplyButton).CornerRadius = UDim.new(0, 10)
+	ApplyButton.LayoutOrder = 8
 
 	ApplyButton.MouseButton1Click:Connect(function()
 		local num = tonumber(SizeBox.Text)
@@ -932,7 +948,7 @@ if enteredKey == "goku" then
 	end)
 
 	-- Rejoin button
-	local Rejoin = Instance.new("TextButton", Main)
+	local Rejoin = Instance.new("TextButton", Content)
 	Rejoin.Size = UDim2.new(0.95, 0, 0, 36)
 	Rejoin.BackgroundColor3 = Color3.fromRGB(200, 40, 40)
 	Rejoin.Text = "Rejoin"
@@ -940,6 +956,7 @@ if enteredKey == "goku" then
 	Rejoin.Font = Enum.Font.GothamBold
 	Rejoin.TextSize = 15
 	Instance.new("UICorner", Rejoin).CornerRadius = UDim.new(0, 10)
+	Rejoin.LayoutOrder = 9
 
 	Rejoin.MouseButton1Click:Connect(function()
 		TeleportService:Teleport(game.PlaceId, LocalPlayer)
@@ -947,6 +964,9 @@ if enteredKey == "goku" then
 
 	-- Aplicar estado inicial a los jugadores ya conectados
 	applyEffects()
+
+	-- Forzar actualización inicial del CanvasSize
+	Main.CanvasSize = UDim2.new(0, 0, 0, UIList.AbsoluteContentSize.Y + 20)
 
 
 	-- DASH BUTTON (Q)
@@ -978,7 +998,7 @@ if enteredKey == "goku" then
 	
     -- Toggle para mostrar/ocultar Dash y Edit
     local showDashAndEdit = true
-    local dashEditToggle = Instance.new("TextButton", Main)
+    local dashEditToggle = Instance.new("TextButton", Content)
     dashEditToggle.Size = UDim2.new(0.95, 0, 0, 36)
     dashEditToggle.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
     dashEditToggle.TextColor3 = Color3.new(1,1,1)
@@ -986,7 +1006,7 @@ if enteredKey == "goku" then
     dashEditToggle.TextSize = 15
     dashEditToggle.Text = "Dash/Edit: ON"
     Instance.new("UICorner", dashEditToggle).CornerRadius = UDim.new(0, 10)
-    dashEditToggle.LayoutOrder = 2
+    dashEditToggle.LayoutOrder = 10
 
     dashEditToggle.MouseButton1Click:Connect(function()
         showDashAndEdit = not showDashAndEdit
