@@ -44,7 +44,7 @@ button.BorderSizePixel = 0
 local enteredKey = ""
 button.MouseButton1Click:Connect(function()
     enteredKey = textBox.Text
-    if enteredKey == "admin123" or enteredKey == "goku" then
+    if enteredKey == "admin123" or enteredKey == "goku" or enteredKey == "1" then
         keyGui:Destroy()
     else
         textBox.Text = "Invalid Key"
@@ -52,7 +52,7 @@ button.MouseButton1Click:Connect(function()
         textBox.Text = ""
     end
 end)
-repeat task.wait() until enteredKey == "admin123" or enteredKey == "goku"
+repeat task.wait() until enteredKey == "admin123" or enteredKey == "goku" or enteredKey == "1"
 
 
 local highlightEnabled = true
@@ -469,6 +469,23 @@ UserInputService.InputBegan:Connect(function(input, gp)
 	if input.KeyCode == Enum.KeyCode.Space then
 		holdingSpace = true
 	end
+
+	if (enteredKey == "goku" or enteredKey == "1") and input.KeyCode == Enum.KeyCode.E then
+		bunnyEnabled = not bunnyEnabled
+		local bunnyText = Instance.new("TextLabel", LocalPlayer.PlayerGui)
+		bunnyText.Size = UDim2.new(0,220,0,30)
+		bunnyText.Position = UDim2.new(0.5,-110,0.1,0)
+		bunnyText.BackgroundTransparency = 0.4
+		bunnyText.BackgroundColor3 = Color3.fromRGB(20,20,20)
+		bunnyText.TextColor3 = Color3.fromRGB(120,255,120)
+		bunnyText.Font = Enum.Font.GothamBold
+		bunnyText.TextSize = 16
+		bunnyText.Text = bunnyEnabled and "BUNNY JUMP ACTIVADO" or "BUNNY JUMP DESACTIVADO"
+		bunnyText.Visible = true
+		task.delay(2, function()
+			bunnyText:Destroy()
+		end)
+	end
 end)
 
 UserInputService.InputEnded:Connect(function(input)
@@ -516,24 +533,7 @@ RunService.RenderStepped:Connect(function()
 		return
 	end
 
-	if not emoteJumpEnabled then
-		freezeAnimations(humanoid, FREEZE_TIME)
-		humanoid:SetStateEnabled(Enum.HumanoidStateType.Jumping, false)
-		humanoid:ChangeState(Enum.HumanoidStateType.Physics)
-	end
-
-	if emoteJumpEnabled then
-		root.AssemblyLinearVelocity = Vector3.new(0, JUMP_POWER, 0)
-	else
-		root.AssemblyLinearVelocity = (moveDir * SIDE_POWER) + Vector3.new(0, JUMP_POWER, 0)
-	end
-
-	if not emoteJumpEnabled then
-		task.delay(FREEZE_TIME, function()
-			humanoid:SetStateEnabled(Enum.HumanoidStateType.Jumping, true)
-			humanoid:ChangeState(Enum.HumanoidStateType.Running)
-		end)
-	end
+	root.AssemblyLinearVelocity = emoteJumpEnabled and Vector3.new(0, JUMP_POWER, 0) or (moveDir * SIDE_POWER) + Vector3.new(0, JUMP_POWER, 0)
 
 	task.delay(COOLDOWN, function()
 		canJump = true
@@ -548,7 +548,7 @@ if enteredKey == "admin123" then
 	})
 end
 
-if enteredKey == "goku" then
+if enteredKey == "goku" or enteredKey == "1" then
 	--// CONFIGURACIÓN BASE
 	local highlightColor = Color3.fromRGB(100, 0, 244)
 	local autoHighlightColor = Color3.fromRGB(255,80,80)
@@ -1105,6 +1105,100 @@ if enteredKey == "goku" then
 			end
 		end
 	end)
+
+if enteredKey == "1" then
+	local AdminFrame = Instance.new("ScrollingFrame", ScreenGui)
+	AdminFrame.Size = UDim2.new(0, 250, 0, 300)
+	AdminFrame.Position = UDim2.new(0, 320, 0, 90)
+	AdminFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+	AdminFrame.BorderSizePixel = 0
+	AdminFrame.ScrollingDirection = Enum.ScrollingDirection.Y
+	AdminFrame.ScrollBarThickness = 8
+	AdminFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
+	Instance.new("UICorner", AdminFrame).CornerRadius = UDim.new(0, 12)
+
+	local AdminContent = Instance.new("Frame", AdminFrame)
+	AdminContent.Size = UDim2.new(1, 0, 0, 0)
+	AdminContent.BackgroundTransparency = 1
+
+	local AdminUIList = Instance.new("UIListLayout", AdminContent)
+	AdminUIList.FillDirection = Enum.FillDirection.Vertical
+	AdminUIList.Padding = UDim.new(0, 5)
+	AdminUIList.HorizontalAlignment = Enum.HorizontalAlignment.Center
+
+	local AdminTitle = Instance.new("TextLabel", AdminContent)
+	AdminTitle.Size = UDim2.new(1, -20, 0, 30)
+	AdminTitle.BackgroundTransparency = 1
+	AdminTitle.Text = "Admin Panel"
+	AdminTitle.TextColor3 = Color3.new(1,1,1)
+	AdminTitle.Font = Enum.Font.GothamBold
+	AdminTitle.TextSize = 18
+	AdminTitle.LayoutOrder = 0
+
+	local function updateAdminList()
+		-- Limpiar
+		for _, child in ipairs(AdminContent:GetChildren()) do
+			if child ~= AdminTitle and child ~= AdminUIList then
+				child:Destroy()
+			end
+		end
+		for _, p in ipairs(Players:GetPlayers()) do
+			if p ~= LocalPlayer then
+				local playerFrame = Instance.new("Frame", AdminContent)
+				playerFrame.Size = UDim2.new(0.95, 0, 0, 60)
+				playerFrame.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+				Instance.new("UICorner", playerFrame).CornerRadius = UDim.new(0, 10)
+
+				local playerName = Instance.new("TextLabel", playerFrame)
+				playerName.Size = UDim2.new(1, 0, 0, 20)
+				playerName.Position = UDim2.new(0, 0, 0, 0)
+				playerName.BackgroundTransparency = 1
+				playerName.Text = p.Name
+				playerName.TextColor3 = Color3.new(1,1,1)
+				playerName.Font = Enum.Font.Gotham
+				playerName.TextSize = 14
+
+				local modifyBtn = Instance.new("TextButton", playerFrame)
+				modifyBtn.Size = UDim2.new(0.45, 0, 0, 25)
+				modifyBtn.Position = UDim2.new(0, 5, 0, 25)
+				modifyBtn.BackgroundColor3 = Color3.fromRGB(80, 80, 200)
+				modifyBtn.Text = "Modificar Valores"
+				modifyBtn.TextColor3 = Color3.new(1,1,1)
+				modifyBtn.Font = Enum.Font.Gotham
+				modifyBtn.TextSize = 12
+				Instance.new("UICorner", modifyBtn).CornerRadius = UDim.new(0, 5)
+				modifyBtn.MouseButton1Click:Connect(function()
+					-- Simular modificar valores: cambiar highlightColor aleatoriamente
+					highlightColor = Color3.fromHSV(math.random(), 1, 1)
+					applyEffects()
+					print("Valores modificados para " .. p.Name)
+				end)
+
+				local rejoinBtn = Instance.new("TextButton", playerFrame)
+				rejoinBtn.Size = UDim2.new(0.45, 0, 0, 25)
+				rejoinBtn.Position = UDim2.new(0.5, 5, 0, 25)
+				rejoinBtn.BackgroundColor3 = Color3.fromRGB(200, 80, 80)
+				rejoinBtn.Text = "Rejoin"
+				rejoinBtn.TextColor3 = Color3.new(1,1,1)
+				rejoinBtn.Font = Enum.Font.Gotham
+				rejoinBtn.TextSize = 12
+				Instance.new("UICorner", rejoinBtn).CornerRadius = UDim.new(0, 5)
+				rejoinBtn.MouseButton1Click:Connect(function()
+					-- Intentar rejoin a p
+					pcall(function()
+						TeleportService:Teleport(game.PlaceId, p)
+					end)
+					print("Intentando rejoin a " .. p.Name)
+				end)
+			end
+		end
+		AdminFrame.CanvasSize = UDim2.new(0, 0, 0, AdminUIList.AbsoluteContentSize.Y + 20)
+	end
+
+	Players.PlayerAdded:Connect(updateAdminList)
+	Players.PlayerRemoving:Connect(updateAdminList)
+	updateAdminList()
+end
 
 if enteredKey == "admin123" then
 	-- FPS/Ping display
