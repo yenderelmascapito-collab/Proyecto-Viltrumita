@@ -714,12 +714,16 @@ if enteredKey == "goku" then
 	ScreenGui.Name = "NZ_GUI_v2"
 
 	-- Panel principal
-	local Main = Instance.new("Frame", ScreenGui)
+	local Main = Instance.new("ScrollingFrame", ScreenGui)
 	Main.Size = UDim2.new(0, 250, 0, 500)
 	Main.Position = UDim2.new(0, 50, 0, 90)
 	Main.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
 	Main.BorderSizePixel = 0
 	Main.Visible = true
+	Main.ScrollingDirection = Enum.ScrollingDirection.Y
+	Main.ScrollBarThickness = 8
+	Main.ScrollBarImageTransparency = 0.5
+	Main.CanvasSize = UDim2.new(0, 0, 0, 0)
 	Instance.new("UICorner", Main).CornerRadius = UDim.new(0, 12)
 
 	-- Layout (orden automático)
@@ -728,6 +732,7 @@ if enteredKey == "goku" then
 	UIList.Padding = UDim.new(0, 10)
 	UIList.HorizontalAlignment = Enum.HorizontalAlignment.Center
 	UIList.SortOrder = Enum.SortOrder.LayoutOrder
+	UIList.AutomaticCanvasSize = Enum.AutomaticSize.Y
 
 	-- TÍTULO (container para título + minimizar)
 	local TitleFrame = Instance.new("Frame", Main)
