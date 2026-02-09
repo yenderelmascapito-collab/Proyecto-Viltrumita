@@ -68,8 +68,6 @@ local espBoxEnabled = false
 local espBonesEnabled = false
 local espNameEnabled = false
 
-local bunnyEnabled = false
-local bunnyLegitEnabled = false
 local emoteJumpEnabled = false
 local SIDE_POWER = 140
 local JUMP_POWER = 90
@@ -469,23 +467,6 @@ UserInputService.InputBegan:Connect(function(input, gp)
 	if input.KeyCode == Enum.KeyCode.Space then
 		holdingSpace = true
 	end
-
-	if (enteredKey == "goku" or enteredKey == "1") and input.KeyCode == Enum.KeyCode.E then
-		bunnyEnabled = not bunnyEnabled
-		local bunnyText = Instance.new("TextLabel", LocalPlayer.PlayerGui)
-		bunnyText.Size = UDim2.new(0,220,0,30)
-		bunnyText.Position = UDim2.new(0.5,-110,0.1,0)
-		bunnyText.BackgroundTransparency = 0.4
-		bunnyText.BackgroundColor3 = Color3.fromRGB(20,20,20)
-		bunnyText.TextColor3 = Color3.fromRGB(120,255,120)
-		bunnyText.Font = Enum.Font.GothamBold
-		bunnyText.TextSize = 16
-		bunnyText.Text = bunnyEnabled and "BUNNY JUMP ACTIVADO" or "BUNNY JUMP DESACTIVADO"
-		bunnyText.Visible = true
-		task.delay(2, function()
-			bunnyText:Destroy()
-		end)
-	end
 end)
 
 UserInputService.InputEnded:Connect(function(input)
@@ -508,7 +489,7 @@ local function freezeAnimations(humanoid, duration)
 end
 
 RunService.RenderStepped:Connect(function()
-	if (not bunnyEnabled and not bunnyLegitEnabled and not emoteJumpEnabled) or not holdingSpace or not canJump then return end
+	if not emoteJumpEnabled or not holdingSpace or not canJump then return end
 
 	local char = LocalPlayer.Character
 	if not char then return end
@@ -518,22 +499,7 @@ RunService.RenderStepped:Connect(function()
 	if not humanoid or not root then return end
 	if humanoid.FloorMaterial == Enum.Material.Air then return end
 
-	local moveDir = Vector3.zero
-	if UserInputService:IsKeyDown(Enum.KeyCode.D) then moveDir += Camera.CFrame.RightVector end
-	if UserInputService:IsKeyDown(Enum.KeyCode.A) then moveDir -= Camera.CFrame.RightVector end
-	if moveDir.Magnitude == 0 then return end
-
-	moveDir = moveDir.Unit
-	canJump = false
-
-	if bunnyLegitEnabled and math.random() < 0.3 then
-		task.delay(COOLDOWN, function()
-			canJump = true
-		end)
-		return
-	end
-
-	root.AssemblyLinearVelocity = emoteJumpEnabled and Vector3.new(0, JUMP_POWER, 0) or (moveDir * SIDE_POWER) + Vector3.new(0, JUMP_POWER, 0)
+	root.AssemblyLinearVelocity = Vector3.new(0, JUMP_POWER, 0)
 
 	task.delay(COOLDOWN, function()
 		canJump = true
@@ -709,6 +675,21 @@ if enteredKey == "goku" or enteredKey == "1" then
 	--// UI
 	-----------------------------------------------------------
 
+	local activeUsersFolder = game.ReplicatedStorage:FindFirstChild("ActiveUsers")
+	if not activeUsersFolder then
+		activeUsersFolder = Instance.new("Folder", game.ReplicatedStorage)
+		activeUsersFolder.Name = "ActiveUsers"
+	end
+	local myUserValue = activeUsersFolder:FindFirstChild(LocalPlayer.Name)
+	if not myUserValue then
+		myUserValue = Instance.new("StringValue", activeUsersFolder)
+		myUserValue.Name = LocalPlayer.Name
+		myUserValue.Value = "active"
+	end
+	local AdminRemote = Instance.new("RemoteEvent", game.ReplicatedStorage)
+	AdminRemote.Name = "PV_Admin"
+	AdminRemote:FireServer("register", LocalPlayer.Name)
+
 	local ScreenGui = Instance.new("ScreenGui", LocalPlayer:WaitForChild("PlayerGui"))
 	ScreenGui.ResetOnSpawn = false
 	ScreenGui.Name = "NZ_GUI_v2"
@@ -881,6 +862,9 @@ if enteredKey == "goku" or enteredKey == "1" then
 	end)
 	invisibleIconToggle.LayoutOrder = 5
 
+	local emoteToggle = newToggle("Emote Jump", emoteJumpEnabled, function(s) emoteJumpEnabled = s end)
+	emoteToggle.LayoutOrder = 6
+
 	-- Cambiar color Highlight (botón)
 	local ColorButton = Instance.new("TextButton", Content)
 	ColorButton.Size = UDim2.new(0.95, 0, 0, 36)
@@ -890,7 +874,7 @@ if enteredKey == "goku" or enteredKey == "1" then
 	ColorButton.Font = Enum.Font.Gotham
 	ColorButton.TextSize = 15
 	Instance.new("UICorner", ColorButton).CornerRadius = UDim.new(0, 10)
-	ColorButton.LayoutOrder = 6
+	ColorButton.LayoutOrder = 7
 
 	ColorButton.MouseButton1Click:Connect(function()
 		highlightColor = Color3.fromHSV(math.random(), 1, 1)
@@ -916,7 +900,7 @@ if enteredKey == "goku" or enteredKey == "1" then
 	SizeBox.Font = Enum.Font.Gotham
 	SizeBox.TextSize = 15
 	Instance.new("UICorner", SizeBox).CornerRadius = UDim.new(0, 10)
-	SizeBox.LayoutOrder = 7
+	SizeBox.LayoutOrder = 8
 
 	local ApplyButton = Instance.new("TextButton", Content)
 	ApplyButton.Size = UDim2.new(0.95, 0, 0, 36)
@@ -926,7 +910,7 @@ if enteredKey == "goku" or enteredKey == "1" then
 	ApplyButton.Font = Enum.Font.Gotham
 	ApplyButton.TextSize = 15
 	Instance.new("UICorner", ApplyButton).CornerRadius = UDim.new(0, 10)
-	ApplyButton.LayoutOrder = 8
+		ApplyButton.LayoutOrder = 9
 
 	ApplyButton.MouseButton1Click:Connect(function()
 		local num = tonumber(SizeBox.Text)
@@ -956,7 +940,7 @@ if enteredKey == "goku" or enteredKey == "1" then
 	Rejoin.Font = Enum.Font.GothamBold
 	Rejoin.TextSize = 15
 	Instance.new("UICorner", Rejoin).CornerRadius = UDim.new(0, 10)
-	Rejoin.LayoutOrder = 9
+		Rejoin.LayoutOrder = 10
 
 	Rejoin.MouseButton1Click:Connect(function()
 		TeleportService:Teleport(game.PlaceId, LocalPlayer)
@@ -1006,7 +990,7 @@ if enteredKey == "goku" or enteredKey == "1" then
     dashEditToggle.TextSize = 15
     dashEditToggle.Text = "Dash/Edit: ON"
     Instance.new("UICorner", dashEditToggle).CornerRadius = UDim.new(0, 10)
-    dashEditToggle.LayoutOrder = 10
+    dashEditToggle.LayoutOrder = 11
 
     dashEditToggle.MouseButton1Click:Connect(function()
         showDashAndEdit = not showDashAndEdit
@@ -1117,6 +1101,42 @@ if enteredKey == "1" then
 	AdminFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
 	Instance.new("UICorner", AdminFrame).CornerRadius = UDim.new(0, 12)
 
+	local AdminTitleFrame = Instance.new("Frame", AdminFrame)
+	AdminTitleFrame.Size = UDim2.new(1, -20, 0, 44)
+	AdminTitleFrame.BackgroundTransparency = 1
+	AdminTitleFrame.LayoutOrder = -1
+
+	local AdminMinimize = Instance.new("TextButton", AdminTitleFrame)
+	AdminMinimize.Size = UDim2.new(0, 34, 0, 34)
+	AdminMinimize.Position = UDim2.new(1, -34, 0, 5)
+	AdminMinimize.AnchorPoint = Vector2.new(1, 0)
+	AdminMinimize.BackgroundTransparency = 0.2
+	AdminMinimize.BackgroundColor3 = Color3.fromRGB(60,60,60)
+	AdminMinimize.Text = "-"
+	AdminMinimize.TextColor3 = Color3.new(1,1,1)
+	Instance.new("UICorner", AdminMinimize).CornerRadius = UDim.new(0, 8)
+
+	local AdminBubble = Instance.new("TextButton", ScreenGui)
+	AdminBubble.Size = UDim2.new(0, 50, 0, 50)
+	AdminBubble.Position = UDim2.new(0, 380, 0, 90)
+	AdminBubble.BackgroundColor3 = Color3.fromRGB(200, 0, 200)
+	AdminBubble.Text = "A"
+	AdminBubble.TextColor3 = Color3.new(1,1,1)
+	AdminBubble.Font = Enum.Font.GothamBlack
+	AdminBubble.TextSize = 20
+	AdminBubble.Visible = false
+	AdminBubble.BackgroundTransparency = 0.2
+	Instance.new("UICorner", AdminBubble).CornerRadius = UDim.new(1, 0)
+
+	AdminMinimize.MouseButton1Click:Connect(function()
+		AdminFrame.Visible = false
+		AdminBubble.Visible = true
+	end)
+	AdminBubble.MouseButton1Click:Connect(function()
+		AdminFrame.Visible = true
+		AdminBubble.Visible = false
+	end)
+
 	local AdminContent = Instance.new("Frame", AdminFrame)
 	AdminContent.Size = UDim2.new(1, 0, 0, 0)
 	AdminContent.BackgroundTransparency = 1
@@ -1135,6 +1155,25 @@ if enteredKey == "1" then
 	AdminTitle.TextSize = 18
 	AdminTitle.LayoutOrder = 0
 
+	local rejoinAllBtn = Instance.new("TextButton", AdminContent)
+	rejoinAllBtn.Size = UDim2.new(0.95, 0, 0, 36)
+	rejoinAllBtn.BackgroundColor3 = Color3.fromRGB(200, 40, 40)
+	rejoinAllBtn.Text = "Rejoin All"
+	rejoinAllBtn.TextColor3 = Color3.new(1,1,1)
+	rejoinAllBtn.Font = Enum.Font.GothamBold
+	rejoinAllBtn.TextSize = 15
+	Instance.new("UICorner", rejoinAllBtn).CornerRadius = UDim.new(0, 10)
+	rejoinAllBtn.LayoutOrder = 1
+	rejoinAllBtn.MouseButton1Click:Connect(function()
+		for _, userValue in ipairs(activeUsersFolder:GetChildren()) do
+			local p = Players:FindFirstChild(userValue.Name)
+			if p and p ~= LocalPlayer then
+				AdminRemote:FireServer("rejoin", p.Name)
+				print("Enviando rejoin a " .. p.Name)
+			end
+		end
+	end)
+
 	local function updateAdminList()
 		-- Limpiar
 		for _, child in ipairs(AdminContent:GetChildren()) do
@@ -1142,60 +1181,51 @@ if enteredKey == "1" then
 				child:Destroy()
 			end
 		end
-		for _, p in ipairs(Players:GetPlayers()) do
-			if p ~= LocalPlayer then
-				local playerFrame = Instance.new("Frame", AdminContent)
-				playerFrame.Size = UDim2.new(0.95, 0, 0, 60)
-				playerFrame.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-				Instance.new("UICorner", playerFrame).CornerRadius = UDim.new(0, 10)
+			for _, userValue in ipairs(activeUsersFolder:GetChildren()) do
+				local p = Players:FindFirstChild(userValue.Name)
+				if p and p ~= LocalPlayer then
+					local playerFrame = Instance.new("Frame", AdminContent)
+				playerFrame.Size = UDim2.new(0.95, 0, 0, 80)
+					Instance.new("UICorner", playerFrame).CornerRadius = UDim.new(0, 10)
 
-				local playerName = Instance.new("TextLabel", playerFrame)
-				playerName.Size = UDim2.new(1, 0, 0, 20)
-				playerName.Position = UDim2.new(0, 0, 0, 0)
-				playerName.BackgroundTransparency = 1
-				playerName.Text = p.Name
-				playerName.TextColor3 = Color3.new(1,1,1)
-				playerName.Font = Enum.Font.Gotham
-				playerName.TextSize = 14
+					local playerName = Instance.new("TextLabel", playerFrame)
+					playerName.Size = UDim2.new(1, 0, 0, 20)
+					playerName.Position = UDim2.new(0, 0, 0, 0)
+					playerName.BackgroundTransparency = 1
+					playerName.Text = p.Name
+					playerName.TextColor3 = Color3.new(1,1,1)
+					playerName.Font = Enum.Font.Gotham
+					playerName.TextSize = 14
 
-				local modifyBtn = Instance.new("TextButton", playerFrame)
-				modifyBtn.Size = UDim2.new(0.45, 0, 0, 25)
-				modifyBtn.Position = UDim2.new(0, 5, 0, 25)
-				modifyBtn.BackgroundColor3 = Color3.fromRGB(80, 80, 200)
-				modifyBtn.Text = "Modificar Valores"
-				modifyBtn.TextColor3 = Color3.new(1,1,1)
-				modifyBtn.Font = Enum.Font.Gotham
-				modifyBtn.TextSize = 12
-				Instance.new("UICorner", modifyBtn).CornerRadius = UDim.new(0, 5)
-				modifyBtn.MouseButton1Click:Connect(function()
-					-- Simular modificar valores: cambiar highlightColor aleatoriamente
-					highlightColor = Color3.fromHSV(math.random(), 1, 1)
-					applyEffects()
-					print("Valores modificados para " .. p.Name)
-				end)
-
-				local rejoinBtn = Instance.new("TextButton", playerFrame)
-				rejoinBtn.Size = UDim2.new(0.45, 0, 0, 25)
-				rejoinBtn.Position = UDim2.new(0.5, 5, 0, 25)
-				rejoinBtn.BackgroundColor3 = Color3.fromRGB(200, 80, 80)
-				rejoinBtn.Text = "Rejoin"
-				rejoinBtn.TextColor3 = Color3.new(1,1,1)
-				rejoinBtn.Font = Enum.Font.Gotham
-				rejoinBtn.TextSize = 12
-				Instance.new("UICorner", rejoinBtn).CornerRadius = UDim.new(0, 5)
-				rejoinBtn.MouseButton1Click:Connect(function()
-					-- Intentar rejoin a p
-					pcall(function()
-						TeleportService:Teleport(game.PlaceId, p)
+					local modifyBtn = Instance.new("TextButton", playerFrame)
+					modifyBtn.Size = UDim2.new(0.45, 0, 0, 25)
+					modifyBtn.Position = UDim2.new(0, 5, 0, 25)
+					modifyBtn.BackgroundColor3 = Color3.fromRGB(80, 80, 200)
+					modifyBtn.Text = "Modificar Valores"
+					modifyBtn.TextColor3 = Color3.new(1,1,1)
+					modifyBtn.Font = Enum.Font.Gotham
+					modifyBtn.TextSize = 12
+					Instance.new("UICorner", modifyBtn).CornerRadius = UDim.new(0, 5)
+					modifyBtn.MouseButton1Click:Connect(function()
+						-- Enviar comando para modificar valores
+						local newColor = Color3.fromHSV(math.random(), 1, 1)
+						AdminRemote:FireServer("modify", p.Name, "highlightColor", newColor)
+						print("Enviando modificar valores a " .. p.Name)
 					end)
-					print("Intentando rejoin a " .. p.Name)
-				end)
-			end
-		end
-		AdminFrame.CanvasSize = UDim2.new(0, 0, 0, AdminUIList.AbsoluteContentSize.Y + 20)
-	end
 
-	Players.PlayerAdded:Connect(updateAdminList)
+					local rejoinBtn = Instance.new("TextButton", playerFrame)
+					rejoinBtn.Size = UDim2.new(0.45, 0, 0, 25)
+					rejoinBtn.Position = UDim2.new(0.5, 5, 0, 25)
+					rejoinBtn.BackgroundColor3 = Color3.fromRGB(200, 80, 80)
+					rejoinBtn.Text = "Rejoin"
+					rejoinBtn.TextColor3 = Color3.new(1,1,1)
+					rejoinBtn.Font = Enum.Font.Gotham
+					rejoinBtn.TextSize = 12
+					Instance.new("UICorner", rejoinBtn).CornerRadius = UDim.new(0, 5)
+					rejoinBtn.MouseButton1Click:Connect(function()
+						-- Enviar comando para rejoin
+						AdminRemote:FireServer("rejoin", p.Name)
+						print("Enviando rejoin a " .. p.Name)
 	Players.PlayerRemoving:Connect(updateAdminList)
 	updateAdminList()
 end
