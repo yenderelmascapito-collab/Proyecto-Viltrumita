@@ -271,7 +271,7 @@ local function detectGameSide()
 	return result
 end
 
-local hitboxSize = 25
+-- hitboxSize already declared above, no need to redeclare here
 
 local function getRoot(char)
 	return char and char:FindFirstChild("HumanoidRootPart")
@@ -595,10 +595,17 @@ end)
 
 -- no key system; skip Rayfield init
 
+-- compatibility stub for missing UI tab used later
+local Explicacion = {CreateLabel = function() end}
+-- stub for Window object to prevent nil calls
+local Window = {Minimize = function() end}
+
+
+
 if true then
 	--// CONFIGURACIÓN BASE
-	local highlightColor = Color3.fromRGB(100, 0, 244)
-	local autoHighlightColor = Color3.fromRGB(255,80,80)
+	-- use existing highlightColor/autoHighlightColor variables defined earlier
+	-- evitar redeclararlos para que las funciones compartan el mismo values
 	-- usar hitboxSize global
 
 	-----------------------------------------------------------
@@ -1217,14 +1224,6 @@ bunnyText.TextSize = 16
 bunnyText.Text = "BUNNY JUMP ACTIVADO"
 bunnyText.Visible = false
 bunnyText.BorderSizePixel = 0
-
-
-
-bunnyText.TextSize = 16
-bunnyText.Text = "BUNNY JUMP ACTIVADO"
-bunnyText.Visible = false
-bunnyText.BorderSizePixel = 0
-end
 
 UserInputService.InputBegan:Connect(function(input,gp)
 	if gp then return end
