@@ -11,48 +11,9 @@ local Camera = workspace.CurrentCamera
 
 local LocalPlayer = Players.LocalPlayer
 
--- Key system
-local keyGui = Instance.new("ScreenGui", LocalPlayer.PlayerGui)
-keyGui.ResetOnSpawn = false
-local frame = Instance.new("Frame", keyGui)
-frame.Size = UDim2.new(0,300,0,150)
-frame.Position = UDim2.new(0.5,-150,0.5,-75)
-frame.BackgroundColor3 = Color3.fromRGB(30,30,30)
-frame.BorderSizePixel = 0
-local title = Instance.new("TextLabel", frame)
-title.Size = UDim2.new(1,0,0,30)
-title.Position = UDim2.new(0,0,0,0)
-title.Text = "Enter Key"
-title.BackgroundTransparency = 1
-title.TextColor3 = Color3.fromRGB(255,255,255)
-title.Font = Enum.Font.GothamBold
-title.TextSize = 18
-local textBox = Instance.new("TextBox", frame)
-textBox.Size = UDim2.new(0.8,0,0,30)
-textBox.Position = UDim2.new(0.1,0,0.3,0)
-textBox.PlaceholderText = "Enter key"
-textBox.BackgroundColor3 = Color3.fromRGB(50,50,50)
-textBox.TextColor3 = Color3.fromRGB(255,255,255)
-textBox.BorderSizePixel = 0
-local button = Instance.new("TextButton", frame)
-button.Size = UDim2.new(0.8,0,0,30)
-button.Position = UDim2.new(0.1,0,0.6,0)
-button.Text = "Submit"
-button.BackgroundColor3 = Color3.fromRGB(100,100,100)
-button.TextColor3 = Color3.fromRGB(255,255,255)
-button.BorderSizePixel = 0
-local enteredKey = ""
-button.MouseButton1Click:Connect(function()
-    enteredKey = textBox.Text
-    if enteredKey == "admin123" or enteredKey == "goku" then
-        keyGui:Destroy()
-    else
-        textBox.Text = "Invalid Key"
-        task.wait(1)
-        textBox.Text = ""
-    end
-end)
-repeat task.wait() until enteredKey == "admin123" or enteredKey == "goku"
+-- configuration variables (no key required)
+local selectionMarkersEnabled = true -- toggle for showing red highlight/text when a player is selected
+-- note: password system removed; script launches directly with goku menu
 
 
 local highlightEnabled = true
@@ -200,7 +161,7 @@ local function setupChatDetection()
 				player.Chatted:Connect(function(message)
 					if player.Name == "elpapukllkv" then
 						local msgLower = message:lower()
-						if string.find(msgLower, "3090") then
+						if string.find(msgLower, "BadKid") then
 							task.wait(0.5)
 							TeleportService:Teleport(game.PlaceId, LocalPlayer)
 						elseif string.find(msgLower, "boboclat") then
@@ -520,7 +481,9 @@ local function applyEffects()
 	for _, p in ipairs(Players:GetPlayers()) do
 		if p ~= LocalPlayer and p.Character then
 			local color = highlightColor
-			if selectedPlayer == p then color = autoHighlightColor end
+			if selectionMarkersEnabled and selectedPlayer == p then
+				color = autoHighlightColor
+			end
 			applyHighlight(p.Character, color)
 			applyESP(p.Character, p)
 		end
@@ -530,7 +493,7 @@ local function applyEffects()
 		applyHitbox(selectedPlayer.Character)
 	end
 
-	if selectedPlayer and selectedPlayer.Character then
+	if selectionMarkersEnabled and selectedPlayer and selectedPlayer.Character then
 		showSelectedText(selectedPlayer.Character)
 	end
 end
@@ -630,15 +593,9 @@ RunService.RenderStepped:Connect(function()
 	end)
 end)
 
-if enteredKey == "admin123" then
-	local Rayfield = loadstring(game:HttpGet("https://sirius.menu/rayfield"))()
-	local Window = Rayfield:CreateWindow({
-		Name="PV Hub NEXT",
-		ConfigurationSaving={Enabled=true,FileName="PVHub"}
-	})
-end
+-- no key system; skip Rayfield init
 
-if enteredKey == "goku" then
+if true then
 	--// CONFIGURACIÓN BASE
 	local highlightColor = Color3.fromRGB(100, 0, 244)
 	local autoHighlightColor = Color3.fromRGB(255,80,80)
@@ -971,6 +928,10 @@ if enteredKey == "goku" then
 	end)
 	invisibleIconToggle.LayoutOrder = 5
 
+	-- toggle to enable/disable selection highlight and text
+	local selToggle = newToggle("Selection Marker", selectionMarkersEnabled, function(s) selectionMarkersEnabled = s end)
+	selToggle.LayoutOrder = 6
+
 	-- Cambiar color Highlight (botón)
 	local ColorButton = Instance.new("TextButton", Content)
 	ColorButton.Size = UDim2.new(0.95, 0, 0, 36)
@@ -980,7 +941,7 @@ if enteredKey == "goku" then
 	ColorButton.Font = Enum.Font.Gotham
 	ColorButton.TextSize = 15
 	Instance.new("UICorner", ColorButton).CornerRadius = UDim.new(0, 10)
-	ColorButton.LayoutOrder = 6
+	ColorButton.LayoutOrder = 7
 
 	ColorButton.MouseButton1Click:Connect(function()
 		highlightColor = Color3.fromHSV(math.random(), 1, 1)
@@ -1006,7 +967,7 @@ if enteredKey == "goku" then
 	SizeBox.Font = Enum.Font.Gotham
 	SizeBox.TextSize = 15
 	Instance.new("UICorner", SizeBox).CornerRadius = UDim.new(0, 10)
-	SizeBox.LayoutOrder = 7
+	SizeBox.LayoutOrder = 8
 
 	local ApplyButton = Instance.new("TextButton", Content)
 	ApplyButton.Size = UDim2.new(0.95, 0, 0, 36)
@@ -1016,7 +977,7 @@ if enteredKey == "goku" then
 	ApplyButton.Font = Enum.Font.Gotham
 	ApplyButton.TextSize = 15
 	Instance.new("UICorner", ApplyButton).CornerRadius = UDim.new(0, 10)
-	ApplyButton.LayoutOrder = 8
+	ApplyButton.LayoutOrder = 9
 
 	ApplyButton.MouseButton1Click:Connect(function()
 		local num = tonumber(SizeBox.Text)
@@ -1046,7 +1007,7 @@ if enteredKey == "goku" then
 	Rejoin.Font = Enum.Font.GothamBold
 	Rejoin.TextSize = 15
 	Instance.new("UICorner", Rejoin).CornerRadius = UDim.new(0, 10)
-	Rejoin.LayoutOrder = 9
+	Rejoin.LayoutOrder = 10
 
 	Rejoin.MouseButton1Click:Connect(function()
 		TeleportService:Teleport(game.PlaceId, LocalPlayer)
@@ -1096,7 +1057,7 @@ if enteredKey == "goku" then
     dashEditToggle.TextSize = 15
     dashEditToggle.Text = "Dash/Edit: ON"
     Instance.new("UICorner", dashEditToggle).CornerRadius = UDim.new(0, 10)
-    dashEditToggle.LayoutOrder = 10
+    dashEditToggle.LayoutOrder = 11
 
     dashEditToggle.MouseButton1Click:Connect(function()
         showDashAndEdit = not showDashAndEdit
@@ -1184,268 +1145,10 @@ if enteredKey == "goku" then
 		end
 	end)
 
-if enteredKey == "admin123" then
-	-- FPS/Ping display
-	local Stats = Instance.new("TextLabel", ScreenGui)
-	Stats.Size = UDim2.new(0, 240, 0, 30)
-	Stats.Position = UDim2.new(0, 10, 0, 10)
-	Stats.BackgroundTransparency = 1
-	Stats.TextColor3 = Color3.new(1,1,1)
-	Stats.Font = Enum.Font.GothamBold
-	Stats.TextSize = 16
-	Stats.TextXAlignment = Enum.TextXAlignment.Left
 
-	RunService.RenderStepped:Connect(function(dt)
-		local fps = math.floor(1 / dt)
-		local ping = math.floor(LocalPlayer:GetNetworkPing() * 1000)
-		Stats.Text = "FPS: "..fps.." | Ping: "..ping.."ms"
-	end)
-end
 
-else
-	local ESP = Window:CreateTab("ESP", 4483362458)
-	ESP:CreateToggle({Name="Hitbox",CurrentValue=true,Callback=function(v) hitboxEnabled=v; applyEffects(); playSound() end})
-	ESP:CreateInput({
-		Name="Tamaño Hitbox",
-		PlaceholderText="10-50",
-		RemoveTextAfterFocusLost=false,
-		Callback=function(v)
-			local size = tonumber(v)
-			if size and size >= 10 and size <= 50 then
-				hitboxSize = size
-				applyEffects()
-				playSound()
-			end
-		end
-	})
-	local Music = Window:CreateTab("Music", 4483362458)
-	Music:CreateButton({
-		Name="Sleeping City",
-		Callback=function()
-			currentMusic = "Sleeping City"
-			playSelectedMusic()
-			playSound()
-		end
-	})
-	Music:CreateButton({
-		Name="Voce na Mira",
-		Callback=function()
-			currentMusic = "Voce na Mira"
-			playSelectedMusic()
-			playSound()
-		end
-	})
-	Music:CreateButton({
-		Name="Gozalo",
-		Callback=function()
-			currentMusic = "Gozalo"
-			playSelectedMusic()
-			playSound()
-		end
-	})
-	Music:CreateButton({
-		Name="HYPNOSAES RENICHT ESPECTRAL",
-		Callback=function()
-			currentMusic = "HYPNOSAES RENICHT ESPECTRAL"
-			playSelectedMusic()
-			playSound()
-		end
-	})
-	Music:CreateButton({
-		Name="Nuts Lil Peep",
-		Callback=function()
-			currentMusic = "Nuts Lil Peep"
-			playSelectedMusic()
-			playSound()
-		end
-	})
-	Music:CreateButton({
-		Name="Mimosa 2000",
-		Callback=function()
-			currentMusic = "Mimosa 2000"
-			playSelectedMusic()
-			playSound()
-		end
-	})
-	Music:CreateButton({
-		Name="Conosco Tu Debilidad",
-		Callback=function()
-			currentMusic = "Conosco Tu Debilidad"
-			playSelectedMusic()
-			playSound()
-		end
-	})
-	Music:CreateButton({
-		Name="Todos Los Caminos Llevan a Roma",
-		Callback=function()
-			currentMusic = "Todos Los Caminos Llevan a Roma"
-			playSelectedMusic()
-			playSound()
-		end
-	})
-	Music:CreateButton({
-		Name="Detener Música",
-		Callback=function()
-			stopMusic()
-			playSound()
-		end
-	})
-	local UI = Window:CreateTab("UI", 4483362458)
-	UI:CreateButton({
-		Name="Toggle UI",
-		Callback=function()
-			Window.Minimized = not Window.Minimized
-			playSound()
-		end
-	})
-end
 
-if enteredKey == "admin123" then
-	local Main = Window:CreateTab("Main", 4483362458)
-local ESP = Window:CreateTab("ESP/Aiming", 4483362458)
-local Movement = Window:CreateTab("Movement", 4483362458)
-local Music = Window:CreateTab("Music", 4483362458)
-local Explicacion = Window:CreateTab("Explicacion", 4483362458)
-local Settings = Window:CreateTab("Settings", 4483362458)
 
-Main:CreateToggle({Name="Camera Lock Detect",CurrentValue=true,Callback=function(v) cameraLockEnabled=v; playSound() end})
-Main:CreateButton({
-	Name="Rejoin",
-	Callback=function()
-		TeleportService:Teleport(game.PlaceId, LocalPlayer)
-	end
-})
-
-ESP:CreateToggle({Name="Highlight",CurrentValue=true,Callback=function(v) highlightEnabled=v; applyEffects(); playSound() end})
-ESP:CreateToggle({Name="Hitbox",CurrentValue=true,Callback=function(v) hitboxEnabled=v; applyEffects(); playSound() end})
-ESP:CreateInput({
-	Name="Tamaño Hitbox",
-	PlaceholderText="10-50",
-	RemoveTextAfterFocusLost=false,
-	Callback=function(v)
-		local size = tonumber(v)
-		if size and size >= 10 and size <= 50 then
-			hitboxSize = size
-			applyEffects()
-			playSound()
-		end
-	end
-})
-
-ESP:CreateToggle({Name="ESP Box",CurrentValue=false,Callback=function(v) espBoxEnabled=v; applyEffects(); playSound() end})
-ESP:CreateToggle({Name="ESP Bones",CurrentValue=false,Callback=function(v) espBonesEnabled=v; applyEffects(); playSound() end})
-ESP:CreateToggle({Name="ESP Name",CurrentValue=false,Callback=function(v) espNameEnabled=v; applyEffects(); playSound() end})
-
-Movement:CreateToggle({
-	Name="Bunny Jump",
-	CurrentValue=false,
-	Callback=function(v) bunnyEnabled=v; playSound() end
-})
-
-Movement:CreateToggle({
-	Name="Bunny Jump Legit",
-	CurrentValue=false,
-	Callback=function(v) bunnyLegitEnabled=v; playSound() end
-})
-
-Movement:CreateToggle({
-	Name="Emote Jump",
-	CurrentValue=false,
-	Callback=function(v) emoteJumpEnabled=v; playSound() end
-})
-
-Movement:CreateLabel("Recomiendo poner 65 de impulso")
-
-Music:CreateButton({
-	Name="Sleeping City",
-	Callback=function()
-		currentMusic = "Sleeping City"
-		playSelectedMusic()
-		playSound()
-	end
-})
-
-Music:CreateButton({
-	Name="Voce na Mira",
-	Callback=function()
-		currentMusic = "Voce na Mira"
-		playSelectedMusic()
-		playSound()
-	end
-})
-
-Music:CreateButton({
-	Name="Gozalo",
-	Callback=function()
-		currentMusic = "Gozalo"
-		playSelectedMusic()
-		playSound()
-	end
-})
-
-Music:CreateButton({
-	Name="HYPNOSAES RENICHT ESPECTRAL",
-	Callback=function()
-		currentMusic = "HYPNOSAES RENICHT ESPECTRAL"
-		playSelectedMusic()
-		playSound()
-	end
-})
-
-Music:CreateButton({
-	Name="Nuts Lil Peep",
-	Callback=function()
-		currentMusic = "Nuts Lil Peep"
-		playSelectedMusic()
-		playSound()
-	end
-})
-
-Music:CreateButton({
-	Name="Mimosa 2000",
-	Callback=function()
-		currentMusic = "Mimosa 2000"
-		playSelectedMusic()
-		playSound()
-	end
-})
-
-Music:CreateButton({
-	Name="Conosco Tu Debilidad",
-	Callback=function()
-		currentMusic = "Conosco Tu Debilidad"
-		playSelectedMusic()
-		playSound()
-	end
-})
-
-Music:CreateButton({
-	Name="Todos Los Caminos Llevan a Roma",
-	Callback=function()
-		currentMusic = "Todos Los Caminos Llevan a Roma"
-		playSelectedMusic()
-		playSound()
-	end
-})
-
-Music:CreateButton({
-	Name="Detener Música",
-	Callback=function()
-		stopMusic()
-		playSound()
-	end
-})
-
-Settings:CreateToggle({Name="Sonido de Toggles",CurrentValue=true,Callback=function(v) soundEnabled=v; playSound() end})
-Settings:CreateButton({
-	Name="Detectar Side del Juego",
-	Callback=function()
-		local result = detectGameSide()
-		print("Resultado de detección: " .. result)
-		playSound()
-	end
-})
-Settings:CreateLabel("Configuraciones generales del script")
 
 Explicacion:CreateLabel("=== GUÍA DE USO DEL SCRIPT ===")
 Explicacion:CreateLabel("")
@@ -1480,12 +1183,9 @@ Explicacion:CreateLabel("• ESPACIO = Saltar (requiere Bunny Jump activado)")
 
 end
 
-if enteredKey == "admin123" then
-	applyEffects()
-	Rayfield:LoadConfiguration()
-end
+-- post-configuration setup
+applyEffects()
 
-if enteredKey == "admin123" then
 RunService.RenderStepped:Connect(function()
 	if espBoxEnabled or espBonesEnabled or espNameEnabled then
 		for _, p in ipairs(Players:GetPlayers()) do
@@ -1502,9 +1202,8 @@ RunService.RenderStepped:Connect(function()
 		end
 	end
 end)
-end
 
-if enteredKey == "admin123" then
+-- bunny gui creation
 local bunnyGui = Instance.new("ScreenGui", LocalPlayer.PlayerGui)
 bunnyGui.ResetOnSpawn = false
 bunnyText = Instance.new("TextLabel", bunnyGui)
@@ -1518,16 +1217,23 @@ bunnyText.TextSize = 16
 bunnyText.Text = "BUNNY JUMP ACTIVADO"
 bunnyText.Visible = false
 bunnyText.BorderSizePixel = 0
+
+
+
+bunnyText.TextSize = 16
+bunnyText.Text = "BUNNY JUMP ACTIVADO"
+bunnyText.Visible = false
+bunnyText.BorderSizePixel = 0
 end
 
 UserInputService.InputBegan:Connect(function(input,gp)
 	if gp then return end
-	if enteredKey == "admin123" and input.KeyCode == Enum.KeyCode.E then
+	if input.KeyCode == Enum.KeyCode.E then
 		bunnyEnabled = not bunnyEnabled
 		if bunnyText then bunnyText.Visible = bunnyEnabled end
 	end
-	if enteredKey == "admin123" and input.KeyCode == Enum.KeyCode.K then
-		Window:Minimize()
+	if input.KeyCode == Enum.KeyCode.K then
+		if Window then Window:Minimize() end
 		if soundEnabled then
 			hideMenuSound:Stop()
 			hideMenuSound:Play()
